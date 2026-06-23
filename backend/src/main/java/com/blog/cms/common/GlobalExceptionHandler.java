@@ -59,6 +59,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
+    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(jakarta.persistence.EntityNotFoundException ex) {
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("data", null);
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        error.put("code", "NOT_FOUND");
+        error.put("message", ex.getMessage() != null ? ex.getMessage() : "Resource not found");
+        response.put("error", error);
+        response.put("meta", Map.of("timestamp", Instant.now().toString()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
         Map<String, Object> response = new java.util.LinkedHashMap<>();

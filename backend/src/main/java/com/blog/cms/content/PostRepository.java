@@ -27,7 +27,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         AND (:topicId IS NULL OR p.topic.id = :topicId)
         AND (:authorId IS NULL OR p.author.id = :authorId)
         AND (:search IS NULL OR p.title LIKE CONCAT('%', CAST(:search AS string), '%'))
-        ORDER BY p.updatedAt DESC
         """,
         countQuery = """
         SELECT COUNT(p) FROM Post p
