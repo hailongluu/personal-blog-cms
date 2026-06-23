@@ -13,6 +13,7 @@ public class PostResponse {
     private Long id;
     private String title;
     private String slug;
+    private String subtitle;
     private String excerpt;
     private String contentMarkdown;
     private String contentHtml;
@@ -20,12 +21,16 @@ public class PostResponse {
     private String ogImageUrl;
     private String status;
     private String visibility;
+    private String type;
+    private boolean featured;
     private AuthorDto author;
     private TopicDto topic;
     private List<TagDto> tags;
     private Integer readingTimeMin;
     private Long viewCount;
     private Instant publishedAt;
+    private Instant firstPublishedAt;
+    private Instant lastPublishedAt;
     private Instant scheduledAt;
     private String metaTitle;
     private String metaDescription;
@@ -60,6 +65,7 @@ public class PostResponse {
             .id(post.getId())
             .title(post.getTitle())
             .slug(post.getSlug())
+            .subtitle(post.getSubtitle())
             .excerpt(post.getExcerpt())
             .contentMarkdown(post.getContentMarkdown())
             .contentHtml(post.getContentHtml())
@@ -67,6 +73,8 @@ public class PostResponse {
             .ogImageUrl(post.getOgImageUrl())
             .status(post.getStatus())
             .visibility(post.getVisibility())
+            .type(post.getType() != null ? post.getType().value() : null)
+            .featured(post.isFeatured())
             .author(post.getAuthor() != null ? AuthorDto.builder()
                 .id(post.getAuthor().getId())
                 .displayName(post.getAuthor().getDisplayName())
@@ -86,6 +94,8 @@ public class PostResponse {
             .readingTimeMin(post.getReadingTimeMin())
             .viewCount(post.getViewCount())
             .publishedAt(post.getPublishedAt())
+            .firstPublishedAt(post.getFirstPublishedAt())
+            .lastPublishedAt(post.getLastPublishedAt())
             .scheduledAt(post.getScheduledAt())
             .metaTitle(post.getMetaTitle())
             .metaDescription(post.getMetaDescription())

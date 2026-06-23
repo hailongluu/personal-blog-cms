@@ -56,6 +56,7 @@ public class SeoController {
 
         // Published posts
         var posts = postRepository.findPublishedPosts(
+            java.time.Instant.now(), null, null,
             org.springframework.data.domain.PageRequest.of(0, 500));
         for (var post : posts.getContent()) {
             sb.append("  <url>\n");

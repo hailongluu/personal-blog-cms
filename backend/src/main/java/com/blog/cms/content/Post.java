@@ -79,8 +79,28 @@ public class Post {
     @Column(name = "published_at")
     private Instant publishedAt;
 
+    @Column(name = "first_published_at")
+    private Instant firstPublishedAt;
+
+    @Column(name = "last_published_at")
+    private Instant lastPublishedAt;
+
     @Column(name = "scheduled_at")
     private Instant scheduledAt;
+
+    // --- Type & featured — SPEC §8.3.3 + §8.3.4 ---
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private PostType type = PostType.ESSAY;
+
+    @Column(length = 1000)
+    private String subtitle;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean featured = false;
 
     // --- SEO ---
     @Column(name = "meta_title", length = 255)

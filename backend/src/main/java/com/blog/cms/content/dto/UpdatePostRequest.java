@@ -15,6 +15,9 @@ public class UpdatePostRequest {
     @Size(max = 255)
     private String title;
 
+    @Size(max = 1000)
+    private String subtitle;
+
     private String excerpt;
 
     private String contentMarkdown;
@@ -30,6 +33,11 @@ public class UpdatePostRequest {
 
     @Size(max = 20)
     private String visibility;
+
+    @Size(max = 30)
+    private String type;
+
+    private Boolean featured;
 
     private Long topicId;
 

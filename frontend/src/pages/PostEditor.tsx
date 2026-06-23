@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { postsApi } from '@/lib/data';
-import type { Post, Topic, Tag } from '@/types';
+import type { Post, Topic, Tag, PostType } from '@/types';
+import { POST_TYPES } from '@/types';
 import { ArrowLeft, Eye, Edit3 } from 'lucide-react';
 
 interface Props {
@@ -16,9 +17,12 @@ interface Props {
 export default function PostEditor({ post, topics, tags, onSave, onCancel }: Props) {
   const [title, setTitle] = useState(post?.title || '');
   const [slug, setSlug] = useState(post?.slug || '');
+  const [subtitle, setSubtitle] = useState(post?.subtitle || '');
   const [contentMarkdown, setContentMarkdown] = useState(post?.contentMarkdown || '');
   const [excerpt, setExcerpt] = useState(post?.excerpt || '');
   const [status, setStatus] = useState(post?.status || 'draft');
+  const [type, setType] = useState<PostType>(post?.type || 'essay');
+  const [featured, setFeatured] = useState<boolean>(post?.featured ?? false);
   const [topicId, setTopicId] = useState<number | undefined>(post?.topic?.id);
   const [selectedTags, setSelectedTags] = useState<number[]>(post?.tags?.map(t => t.id) || []);
   const [preview, setPreview] = useState(false);
@@ -31,7 +35,18 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
     setSaving(true);
     setError('');
     try {
-      const data = { title: title.trim(), slug: slug.trim() || undefined, contentMarkdown, excerpt: excerpt.trim() || undefined, status, topicId: topicId || undefined, tagIds: selectedTags.length > 0 ? selectedTags : undefined };
+      const data = {
+        title: title.trim(),
+        slug: slug.trim() || undefined,
+        subtitle: subtitle.trim() || undefined,
+        contentMarkdown,
+        excerpt: excerpt.trim() || undefined,
+        status,
+        type,
+        featured,
+        topicId: topicId || undefined,
+        tagIds: selectedTags.length > 0 ? selectedTags : undefined,
+      };
       if (post) {
         await postsApi.update(post.id, data);
       } else {
@@ -73,6 +88,7 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
           <div>
             <label className="block text-sm font-medium text-text mb-1">Slug</label>
             <input type="text" value={slug} onChange={e => setSlug(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-text-muted" placeholder="auto-generated" />
+            <input type="text" value={subtitle} onChange={e => setSubtitle(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" placeholder="Subtitle (optional tagline)" maxLength={1000} />
           </div>
         </div>
 
@@ -93,6 +109,21 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
               <option value="published">Published</option>
               <option value="archived">Archived</option>
             </select>
+            <select value={type} onChange={e => setType(e.target.value as PostType)} className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface">
+              {POST_TYPES.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={featured}
+                onChange={e => setFeatured(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+              />
+              <span className="font-medium">Featured post</span>
+              <span className="text-text-muted text-xs">(highlight on homepage)</span>
+            </label>
           </div>
           <div>
             <label className="block text-sm font-medium text-text mb-1">Tags</label>

@@ -19,17 +19,29 @@ public class PostController {
 
     private final PostService postService;
 
+    /**
+     * GET /api/admin/posts — filterable list
+     * Query params (SPEC §8.3.11): page, pageSize, q, status, type,
+     *   topicId, tagId, featured, sort, direction
+     */
     @GetMapping("/posts")
     @PreAuthorize("hasAnyRole('ADMIN','EDITOR','AUTHOR')")
     public ApiResponse<List<PostResponse>> list(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
             @RequestParam(required = false) Long topicId,
             @RequestParam(required = false) Long authorId,
+            @RequestParam(required = false) Long tagId,
+            @RequestParam(required = false) Boolean featured,
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "updated_at") String sort,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return postService.list(status, topicId, authorId, search, sort, page, size);
+        // Support both ?q= and ?search= for frontend flexibility
+        String query = q != null ? q : search;
+        return postService.list(status, type, topicId, authorId, tagId, featured,
+            query, sort, page, size);
     }
 
     @GetMapping("/posts/{id}")
@@ -67,6 +79,46 @@ public class PostController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         return postService.softDelete(id);
     }
+
+    // ───────────────────────────────────────────────────────────
+    // Lifecycle endpoints — SPEC §8.3.10
+    // ───────────────────────────────────────────────────────────
+
+    @PostMapping("/posts/{id}/publish")
+    @PreAuthorize("hasAnyRole('ADMIN','EDITOR')")
+    public ApiResponse<PostResponse> publish(@PathVariable Long id) {
+        return postService.publish(id);
+    }
+
+    @PostMapping("/posts/{id}/unpublish")
+    @PreAuthorize("hasAnyRole('ADMIN','EDITOR')")
+    public ApiResponse<PostResponse> unpublish(@PathVariable Long id) {
+        return postService.unpublish(id);
+    }
+
+    @PostMapping("/posts/{id}/archive")
+    @PreAuthorize("hasAnyRole('ADMIN','EDITOR')")
+    public ApiResponse<PostResponse> archive(@PathVariable Long id) {
+        return postService.archive(id);
+    }
+
+    @PostMapping("/posts/{id}/duplicate")
+    @PreAuthorize("hasAnyRole('ADMIN','EDITOR','AUTHOR')")
+    public ApiResponse<PostResponse> duplicate(
+            @PathVariable Long id,
+            @AuthenticationPrincipal BlogUserDetails user) {
+        return postService.duplicate(id, user.getUsername());
+    }
+
+    @GetMapping("/posts/{id}/preview")
+    @PreAuthorize("hasAnyRole('ADMIN','EDITOR','AUTHOR')")
+    public ApiResponse<PostResponse> preview(@PathVariable Long id) {
+        return postService.preview(id);
+    }
+
+    // ───────────────────────────────────────────────────────────
+    // Soft delete management
+    // ───────────────────────────────────────────────────────────
 
     @PostMapping("/posts/{id}/restore")
     @PreAuthorize("hasRole('ADMIN')")

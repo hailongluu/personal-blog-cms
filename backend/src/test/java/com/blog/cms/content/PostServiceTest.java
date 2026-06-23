@@ -74,7 +74,7 @@ class PostServiceTest {
             when(postRepository.save(any(Post.class))).thenReturn(post);
 
             CreatePostRequest req = CreatePostRequest.builder()
-                .title("Test Post").contentMarkdown("# Hello").topicId(1L).tagIds(Set.of(1L)).build();
+                .title("Test Post").contentMarkdown("# Hello").topicId(1L).tagIds(Set.of(1L)).type("essay").build();
 
             ApiResponse<PostResponse> result = postService.create(req, "admin@example.com");
 
@@ -97,7 +97,7 @@ class PostServiceTest {
             });
 
             CreatePostRequest req = CreatePostRequest.builder()
-                .title("My Title").contentMarkdown("test").build();
+                .title("My Title").contentMarkdown("test").type("essay").build();
 
             ApiResponse<PostResponse> result = postService.create(req, "admin@example.com");
 
@@ -112,7 +112,7 @@ class PostServiceTest {
             when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
 
             CreatePostRequest req = CreatePostRequest.builder()
-                .title("Published Post").status("published").contentMarkdown("test").build();
+                .title("Published Post").status("published").contentMarkdown("test").type("essay").build();
 
             ApiResponse<PostResponse> result = postService.create(req, "admin@example.com");
 
@@ -125,7 +125,7 @@ class PostServiceTest {
         void shouldFailUserNotFound() {
             when(userRepository.findByEmailWithRole("unknown@example.com")).thenReturn(Optional.empty());
 
-            CreatePostRequest req = CreatePostRequest.builder().title("X").build();
+            CreatePostRequest req = CreatePostRequest.builder().title("X").type("essay").build();
 
             assertThatThrownBy(() -> postService.create(req, "unknown@example.com"))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -241,6 +241,119 @@ class PostServiceTest {
             when(postRepository.findById(1L)).thenReturn(Optional.of(post));
 
             assertThatThrownBy(() -> postService.restore(1L))
+                .isInstanceOf(EntityNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("LIFECYCLE — publish/unpublish/archive/duplicate/preview")
+    class Lifecycle {
+
+        @Test
+        @DisplayName("publish: sets status + publishedAt + firstPublishedAt + lastPublishedAt")
+        void shouldPublish() {
+            post.setStatus("draft");
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ApiResponse<PostResponse> result = postService.publish(1L);
+
+            assertThat(result.getData().getStatus()).isEqualTo("published");
+            assertThat(post.getPublishedAt()).isNotNull();
+            assertThat(post.getFirstPublishedAt()).isNotNull();
+            assertThat(post.getLastPublishedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("publish: keeps firstPublishedAt on re-publish, updates lastPublishedAt")
+        void shouldKeepFirstPublishedAt() {
+            Instant first = Instant.parse("2026-01-01T00:00:00Z");
+            post.setStatus("draft");
+            post.setPublishedAt(first);
+            post.setFirstPublishedAt(first);
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            postService.publish(1L);
+
+            assertThat(post.getFirstPublishedAt()).isEqualTo(first);
+            assertThat(post.getLastPublishedAt()).isAfter(first);
+        }
+
+        @Test
+        @DisplayName("unpublish: PUBLISHED → DRAFT, keeps firstPublishedAt")
+        void shouldUnpublish() {
+            Instant first = Instant.now();
+            post.setStatus("published");
+            post.setFirstPublishedAt(first);
+            post.setLastPublishedAt(first);
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ApiResponse<PostResponse> result = postService.unpublish(1L);
+
+            assertThat(result.getData().getStatus()).isEqualTo("draft");
+            assertThat(post.getFirstPublishedAt()).isEqualTo(first);
+        }
+
+        @Test
+        @DisplayName("archive: any non-deleted → ARCHIVED")
+        void shouldArchive() {
+            post.setStatus("published");
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ApiResponse<PostResponse> result = postService.archive(1L);
+
+            assertThat(result.getData().getStatus()).isEqualTo("archived");
+        }
+
+        @Test
+        @DisplayName("duplicate: creates a draft copy with unique slug, clears featured/canonical")
+        void shouldDuplicate() {
+            post.setSlug("original-slug");
+            post.setStatus("published");
+            post.setFeatured(true);
+            post.setCanonicalUrl("https://example.com/canonical");
+            post.setTopic(Topic.builder().id(1L).name("AI").slug("ai").build());
+
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(userRepository.findByEmailWithRole("admin@example.com"))
+                .thenReturn(Optional.of(author));
+            when(postRepository.existsBySlug("original-slug-copy")).thenReturn(false);
+            when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ApiResponse<PostResponse> result = postService.duplicate(1L, "admin@example.com");
+
+            PostResponse copy = result.getData();
+            assertThat(copy.getSlug()).isEqualTo("original-slug-copy");
+            assertThat(copy.getStatus()).isEqualTo("draft");
+            assertThat(copy.isFeatured()).isFalse();
+            assertThat(copy.getCanonicalUrl()).isNull();
+            assertThat(copy.getTitle()).contains("(copy)");
+            assertThat(copy.getTopic()).isNotNull();
+            assertThat(copy.getViewCount()).isEqualTo(0L);
+        }
+
+        @Test
+        @DisplayName("preview: returns the post (works for drafts)")
+        void shouldPreview() {
+            post.setStatus("draft");
+            when(postRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(post));
+
+            ApiResponse<PostResponse> result = postService.preview(1L);
+
+            assertThat(result.getData().getId()).isEqualTo(1L);
+            assertThat(result.getData().getStatus()).isEqualTo("draft");
+        }
+
+        @Test
+        @DisplayName("publish: fails on deleted post")
+        void shouldFailPublishDeleted() {
+            post.setDeletedAt(Instant.now());
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+            assertThatThrownBy(() -> postService.publish(1L))
                 .isInstanceOf(EntityNotFoundException.class);
         }
     }

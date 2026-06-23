@@ -2,7 +2,7 @@ import { api } from '@/lib/api';
 import type { Post, Topic, Tag, Project, Media, Settings, PagedResponse } from '@/types';
 // ─── Posts ────────────────────────────────────────────────
 export const postsApi = {
-  list: (params?: Record<string, string>) =>
+  list: (params?: Record<string, string | number | boolean>) =>
     api.get<PagedResponse<Post>>('/admin/posts', { params }).then(r => r.data),
   get: (id: number) => api.get<{ data: Post }>(`/admin/posts/${id}`).then(r => r.data.data),
   getBySlug: (slug: string) => api.get<{ data: Post }>(`/admin/posts/slug/${slug}`).then(r => r.data.data),
@@ -12,6 +12,14 @@ export const postsApi = {
     api.put<{ data: Post }>(`/admin/posts/${id}`, data).then(r => r.data.data),
   delete: (id: number) => api.delete(`/admin/posts/${id}`),
   restore: (id: number) => api.post(`/admin/posts/${id}/restore`),
+  publish: (id: number) =>
+    api.post<{ data: Post }>(`/admin/posts/${id}/publish`).then(r => r.data.data),
+  unpublish: (id: number) =>
+    api.post<{ data: Post }>(`/admin/posts/${id}/unpublish`).then(r => r.data.data),
+  archive: (id: number) =>
+    api.post<{ data: Post }>(`/admin/posts/${id}/archive`).then(r => r.data.data),
+  duplicate: (id: number) =>
+    api.post<{ data: Post }>(`/admin/posts/${id}/duplicate`).then(r => r.data.data),
 };
 
 // ─── Topics ───────────────────────────────────────────────

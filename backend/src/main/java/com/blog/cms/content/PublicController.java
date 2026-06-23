@@ -23,9 +23,18 @@ public class PublicController {
 
     @GetMapping("/posts")
     public ApiResponse<List<PostResponse>> listPosts(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Long tagId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return publicPostService.listPublishedPosts(page, size);
+        return publicPostService.listPublishedPosts(type, tagId, page, size);
+    }
+
+    @GetMapping("/posts/featured")
+    public ApiResponse<List<PostResponse>> listFeaturedPosts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return publicPostService.listFeaturedPosts(page, size);
     }
 
     @GetMapping("/posts/{slug}")
@@ -50,9 +59,11 @@ public class PublicController {
     @GetMapping("/topics/{slug}/posts")
     public ApiResponse<List<PostResponse>> getTopicPosts(
             @PathVariable String slug,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Long tagId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return publicPostService.getPostsByTopicSlug(slug, page, size);
+        return publicPostService.getPostsByTopicSlug(slug, type, tagId, page, size);
     }
 
     // ──────────────────────────────────────────────

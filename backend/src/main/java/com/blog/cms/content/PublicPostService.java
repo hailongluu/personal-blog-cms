@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -37,10 +38,24 @@ public class PublicPostService {
     // ──────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<PostResponse>> listPublishedPosts(int page, int size) {
+    public ApiResponse<List<PostResponse>> listPublishedPosts(
+            String type, Long tagId, int page, int size) {
+        PostType typeFilter = null;
+        if (type != null && !type.isBlank()) {
+            typeFilter = PostType.parse(type);
+        }
         Pageable pageable = PageRequest.of(page - 1, size,
             Sort.by(Sort.Direction.DESC, "publishedAt"));
-        Page<Post> posts = postRepository.findPublishedPosts(pageable);
+        Page<Post> posts = postRepository.findPublishedPosts(
+            Instant.now(), typeFilter, tagId, pageable);
+        var data = posts.getContent().stream().map(PostResponse::from).toList();
+        return ApiResponse.paged(data, page, size, posts.getTotalElements());
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<List<PostResponse>> listFeaturedPosts(int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Post> posts = postRepository.findFeaturedPosts(Instant.now(), pageable);
         var data = posts.getContent().stream().map(PostResponse::from).toList();
         return ApiResponse.paged(data, page, size, posts.getTotalElements());
     }
@@ -82,16 +97,18 @@ public class PublicPostService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<PostResponse>> getPostsByTopicSlug(String slug, int page, int size) {
-        // Verify topic exists
+    public ApiResponse<List<PostResponse>> getPostsByTopicSlug(
+            String slug, String type, Long tagId, int page, int size) {
         topicRepository.findBySlug(slug)
             .filter(t -> t.getDeletedAt() == null)
             .orElseThrow(() -> new EntityNotFoundException(
                 "Không tìm thấy chủ đề: " + slug));
 
+        PostType typeFilter = PostType.parse(type);
         Pageable pageable = PageRequest.of(page - 1, size,
             Sort.by(Sort.Direction.DESC, "publishedAt"));
-        Page<Post> posts = postRepository.findPublishedByTopicSlug(slug, pageable);
+        Page<Post> posts = postRepository.findPublishedByTopicSlug(
+            slug, Instant.now(), pageable);
         var data = posts.getContent().stream().map(PostResponse::from).toList();
         return ApiResponse.paged(data, page, size, posts.getTotalElements());
     }

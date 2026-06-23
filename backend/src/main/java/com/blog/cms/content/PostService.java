@@ -16,9 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -26,10 +25,25 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private static final Logger log = LoggerFactory.getLogger(PostService.class);
+
+    /** SPEC §6.4: kebab-case lowercase slug */
+    private static final Pattern SLUG_REGEX =
+        Pattern.compile("^[a-z0-9]+(?:-[a-z0-9]+)*$");
+
+    /** SPEC §8.3.4: valid post types */
+    private static final Set<String> VALID_TYPES = Set.of(
+        "essay", "research_brief", "field_note", "build_log",
+        "playbook", "review", "personal_log"
+    );
+
     private final PostRepository postRepository;
     private final TagRepository tagRepository;
     private final TopicRepository topicRepository;
     private final UserRepository userRepository;
+
+    // ───────────────────────────────────────────────────────────
+    // Queries
+    // ───────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public ApiResponse<PostResponse> findById(Long id) {
@@ -47,22 +61,47 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public ApiResponse<java.util.List<PostResponse>> list(
-            String status, Long topicId, Long authorId, String search,
+            String status, String type, Long topicId, Long authorId,
+            Long tagId, Boolean featured, String search,
             String sort, int page, int size) {
+
+        // Validate type — pass PostType enum directly (Hibernate handles enum binding)
+        PostType typeFilter = null;
+        if (type != null && !type.isBlank()) {
+            typeFilter = PostType.parse(type);
+            if (typeFilter == null) {
+                throw new IllegalArgumentException("Invalid type: " + type);
+            }
+        }
 
         Sort sorting = switch (sort != null ? sort : "updated_at") {
             case "published_at" -> Sort.by(Sort.Direction.DESC, "publishedAt");
-            case "title" -> Sort.by(Sort.Direction.ASC, "title");
-            default -> Sort.by(Sort.Direction.DESC, "updatedAt");
+            case "title"        -> Sort.by(Sort.Direction.ASC, "title");
+            case "created_at"   -> Sort.by(Sort.Direction.DESC, "createdAt");
+            case "view_count"   -> Sort.by(Sort.Direction.DESC, "viewCount");
+            default             -> Sort.by(Sort.Direction.DESC, "updatedAt");
         };
         Pageable pageable = PageRequest.of(page - 1, size, sorting);
-        Page<Post> posts = postRepository.findFiltered(status, topicId, authorId,
+        Page<Post> posts = postRepository.findFiltered(
+            status, typeFilter, topicId, authorId, tagId, featured,
             search != null ? search.toLowerCase() : null,
-            sort != null ? sort : "updated_at", pageable);
+            pageable);
 
         var data = posts.getContent().stream().map(PostResponse::from).toList();
         return ApiResponse.paged(data, page, size, posts.getTotalElements());
     }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<java.util.List<PostResponse>> listDeleted(int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Post> posts = postRepository.findDeleted(pageable);
+        var data = posts.getContent().stream().map(PostResponse::from).toList();
+        return ApiResponse.paged(data, page, size, posts.getTotalElements());
+    }
+
+    // ───────────────────────────────────────────────────────────
+    // Mutations
+    // ───────────────────────────────────────────────────────────
 
     public ApiResponse<PostResponse> create(CreatePostRequest req, String userEmail) {
         User author = userRepository.findByEmailWithRole(userEmail)
@@ -72,16 +111,18 @@ public class PostService {
         if (slug == null || slug.isBlank()) {
             slug = SlugUtils.slugify(req.getTitle());
         }
-        // ensure unique slug
-        int counter = 1;
-        String base = slug;
-        while (postRepository.existsBySlug(slug)) {
-            slug = base + "-" + counter++;
+        slug = ensureUniqueSlug(slug);
+
+        // Default to ESSAY when type is null/blank (e.g. legacy callers)
+        PostType type = PostType.parse(req.getType());
+        if (type == null) {
+            type = PostType.ESSAY;
         }
 
         Post post = Post.builder()
             .title(req.getTitle())
             .slug(slug)
+            .subtitle(req.getSubtitle())
             .excerpt(req.getExcerpt())
             .contentMarkdown(req.getContentMarkdown() != null ? req.getContentMarkdown() : "")
             .contentHtml(req.getContentHtml() != null ? req.getContentHtml() : "")
@@ -89,6 +130,8 @@ public class PostService {
             .ogImageUrl(req.getOgImageUrl())
             .status(req.getStatus() != null ? req.getStatus() : "draft")
             .visibility(req.getVisibility() != null ? req.getVisibility() : "public")
+            .type(type)
+            .featured(req.isFeatured())
             .author(author)
             .readingTimeMin(estimateReadingTime(req.getContentMarkdown()))
             .viewCount(0L)
@@ -97,22 +140,19 @@ public class PostService {
             .canonicalUrl(req.getCanonicalUrl())
             .build();
 
-        // Set topic
         if (req.getTopicId() != null) {
             topicRepository.findById(req.getTopicId()).ifPresent(post::setTopic);
         }
-        // Set tags
         if (req.getTagIds() != null && !req.getTagIds().isEmpty()) {
             post.setTags(Set.copyOf(tagRepository.findAllById(req.getTagIds())));
         }
 
-        // If publishing now, set publishedAt
-        if ("published".equals(post.getStatus())) {
-            post.setPublishedAt(Instant.now());
-        }
+        // Apply publish transition if creating directly as published
+        applyPublishTransition(post);
 
         Post saved = postRepository.save(post);
-        log.info("Post created: id={}, slug={}, status={}", saved.getId(), saved.getSlug(), saved.getStatus());
+        log.info("Post created: id={}, slug={}, type={}, status={}",
+            saved.getId(), saved.getSlug(), saved.getType(), saved.getStatus());
         return ApiResponse.ok(PostResponse.from(saved));
     }
 
@@ -121,10 +161,8 @@ public class PostService {
             .filter(p -> p.getDeletedAt() == null)
             .orElseThrow(() -> new EntityNotFoundException("Post not found: " + id));
 
-        boolean wasNotPublished = !"published".equals(post.getStatus());
-        boolean nowPublishing = "published".equals(req.getStatus());
-
         if (req.getTitle() != null) post.setTitle(req.getTitle());
+        if (req.getSubtitle() != null) post.setSubtitle(req.getSubtitle());
         if (req.getExcerpt() != null) post.setExcerpt(req.getExcerpt());
         if (req.getContentMarkdown() != null) {
             post.setContentMarkdown(req.getContentMarkdown());
@@ -135,38 +173,111 @@ public class PostService {
         if (req.getOgImageUrl() != null) post.setOgImageUrl(req.getOgImageUrl());
         if (req.getStatus() != null) post.setStatus(req.getStatus());
         if (req.getVisibility() != null) post.setVisibility(req.getVisibility());
+        if (req.getType() != null) {
+            PostType parsed = resolveType(req.getType());
+            post.setType(parsed);
+        }
+        if (req.getFeatured() != null) post.setFeatured(req.getFeatured());
         if (req.getMetaTitle() != null) post.setMetaTitle(req.getMetaTitle());
         if (req.getMetaDescription() != null) post.setMetaDescription(req.getMetaDescription());
         if (req.getCanonicalUrl() != null) post.setCanonicalUrl(req.getCanonicalUrl());
+        if (req.getScheduledAt() != null) post.setScheduledAt(req.getScheduledAt());
 
-        // Topic
         if (req.getTopicId() != null) {
             topicRepository.findById(req.getTopicId()).ifPresentOrElse(
                 post::setTopic,
-                () -> { /* keep existing if not found */ }
+                () -> { /* keep existing */ }
             );
         }
-        // Tags
         if (req.getTagIds() != null) {
             post.setTags(Set.copyOf(tagRepository.findAllById(req.getTagIds())));
         }
-        // Scheduled publish
-        if (req.getScheduledAt() != null) {
-            post.setScheduledAt(req.getScheduledAt());
-        }
 
-        // Publish transition
-        if (wasNotPublished && nowPublishing && post.getPublishedAt() == null) {
-            post.setPublishedAt(Instant.now());
-        }
+        applyPublishTransition(post);
 
         post = postRepository.save(post);
         return ApiResponse.ok(PostResponse.from(post));
     }
 
+    // ───────────────────────────────────────────────────────────
+    // Dedicated lifecycle endpoints — SPEC §8.3.10
+    // ───────────────────────────────────────────────────────────
+
+    public ApiResponse<PostResponse> publish(Long id) {
+        Post post = mustExist(id);
+        post.setStatus("published");
+        applyPublishTransition(post);
+        post = postRepository.save(post);
+        log.info("Post published: id={}, slug={}", post.getId(), post.getSlug());
+        return ApiResponse.ok(PostResponse.from(post));
+    }
+
+    public ApiResponse<PostResponse> unpublish(Long id) {
+        Post post = mustExist(id);
+        // SPEC §8.3.7: PUBLISHED → DRAFT, keep first_published_at
+        post.setStatus("draft");
+        post = postRepository.save(post);
+        log.info("Post unpublished: id={}, slug={}", post.getId(), post.getSlug());
+        return ApiResponse.ok(PostResponse.from(post));
+    }
+
+    public ApiResponse<PostResponse> archive(Long id) {
+        Post post = mustExist(id);
+        // SPEC §8.3.8: any non-deleted → ARCHIVED
+        post.setStatus("archived");
+        post = postRepository.save(post);
+        log.info("Post archived: id={}, slug={}", post.getId(), post.getSlug());
+        return ApiResponse.ok(PostResponse.from(post));
+    }
+
+    public ApiResponse<PostResponse> duplicate(Long id, String userEmail) {
+        Post source = mustExist(id);
+        User author = userRepository.findByEmailWithRole(userEmail)
+            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        String baseSlug = source.getSlug() + "-copy";
+        String newSlug = ensureUniqueSlug(baseSlug);
+
+        Post copy = Post.builder()
+            .title(source.getTitle() + " (copy)")
+            .slug(newSlug)
+            .subtitle(source.getSubtitle())
+            .excerpt(source.getExcerpt())
+            .contentMarkdown(source.getContentMarkdown())
+            .contentHtml(source.getContentHtml())
+            .coverImageUrl(source.getCoverImageUrl())
+            .ogImageUrl(source.getOgImageUrl())
+            .status("draft")                    // SPEC: copies start as draft
+            .visibility(source.getVisibility())
+            .type(source.getType())
+            .featured(false)                    // SPEC: don't carry featured flag
+            .author(author)
+            .topic(source.getTopic())
+            .tags(source.getTags() != null ? Set.copyOf(source.getTags()) : Set.of())
+            .readingTimeMin(source.getReadingTimeMin())
+            .viewCount(0L)
+            .metaTitle(source.getMetaTitle())
+            .metaDescription(source.getMetaDescription())
+            .canonicalUrl(null)                  // SPEC: clear canonical on duplicate
+            .build();
+
+        Post saved = postRepository.save(copy);
+        log.info("Post duplicated: source={}, copy={}", id, saved.getId());
+        return ApiResponse.ok(PostResponse.from(saved));
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<PostResponse> preview(Long id) {
+        // Same as findById but explicit — could allow draft preview later
+        return findById(id);
+    }
+
+    // ───────────────────────────────────────────────────────────
+    // Soft delete / restore
+    // ───────────────────────────────────────────────────────────
+
     public ApiResponse<Void> softDelete(Long id) {
-        Post post = postRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Post not found: " + id));
+        Post post = mustExist(id);
         post.setDeletedAt(Instant.now());
         postRepository.save(post);
         log.info("Post soft-deleted: id={}", id);
@@ -183,15 +294,56 @@ public class PostService {
         return ApiResponse.ok(null);
     }
 
-    @Transactional(readOnly = true)
-    public ApiResponse<java.util.List<PostResponse>> listDeleted(int page, int size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Post> posts = postRepository.findDeleted(pageable);
-        var data = posts.getContent().stream().map(PostResponse::from).toList();
-        return ApiResponse.paged(data, page, size, posts.getTotalElements());
+    // ───────────────────────────────────────────────────────────
+    // Helpers
+    // ───────────────────────────────────────────────────────────
+
+    private Post mustExist(Long id) {
+        return postRepository.findById(id)
+            .filter(p -> p.getDeletedAt() == null)
+            .orElseThrow(() -> new EntityNotFoundException("Post not found: " + id));
     }
 
-    // --- helpers ---
+    private String ensureUniqueSlug(String base) {
+        if (!postRepository.existsBySlug(base)) {
+            return base;
+        }
+        int counter = 1;
+        String candidate;
+        do {
+            candidate = base + "-" + counter++;
+        } while (postRepository.existsBySlug(candidate));
+        return candidate;
+    }
+
+    private PostType resolveType(String raw) {
+        PostType parsed = PostType.parse(raw);
+        if (parsed == null) {
+            throw new IllegalArgumentException(
+                "Invalid type '" + raw + "'. Valid values: " + PostType.allValues());
+        }
+        return parsed;
+    }
+
+    /**
+     * SPEC §8.3.6 publish rule:
+     *   - set published_at = now if null
+     *   - set first_published_at = now if null
+     *   - set last_published_at = now (every transition)
+     */
+    private void applyPublishTransition(Post post) {
+        if (!"published".equals(post.getStatus())) {
+            return;
+        }
+        Instant now = Instant.now();
+        if (post.getPublishedAt() == null) {
+            post.setPublishedAt(now);
+        }
+        if (post.getFirstPublishedAt() == null) {
+            post.setFirstPublishedAt(now);
+        }
+        post.setLastPublishedAt(now);
+    }
 
     private int estimateReadingTime(String markdown) {
         if (markdown == null || markdown.isBlank()) return 0;

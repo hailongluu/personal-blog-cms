@@ -1,19 +1,38 @@
+export type PostType =
+  | 'essay' | 'research_brief' | 'field_note' | 'build_log'
+  | 'playbook' | 'review' | 'personal_log';
+
+export const POST_TYPES: { value: PostType; label: string }[] = [
+  { value: 'essay', label: 'Essay' },
+  { value: 'research_brief', label: 'Research Brief' },
+  { value: 'field_note', label: 'Field Note' },
+  { value: 'build_log', label: 'Build Log' },
+  { value: 'playbook', label: 'Playbook' },
+  { value: 'review', label: 'Review' },
+  { value: 'personal_log', label: 'Personal Log' },
+];
+
 export interface Post {
   id: number;
   title: string;
   slug: string;
+  subtitle: string | null;
   excerpt: string | null;
   contentMarkdown: string;
   contentHtml: string;
   coverImageUrl: string | null;
   status: 'draft' | 'reviewing' | 'published' | 'archived';
   visibility: 'public' | 'unlisted' | 'private';
+  type: PostType;
+  featured: boolean;
   author: { id: number; displayName: string; avatarUrl: string | null };
   topic: { id: number; name: string; slug: string; color: string } | null;
   tags: { id: number; name: string; slug: string }[];
   readingTimeMin: number;
   viewCount: number;
   publishedAt: string | null;
+  firstPublishedAt: string | null;
+  lastPublishedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
