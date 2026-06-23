@@ -22,4 +22,6 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
     List<Topic> findByParentId(Long parentId);
 
     boolean existsBySlug(String slug);
+
+    long countByDeletedAtIsNull();
 }

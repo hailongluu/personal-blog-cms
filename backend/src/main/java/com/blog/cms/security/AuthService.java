@@ -132,5 +132,34 @@ public class AuthService {
         sessionRepository.revokeAllByUserId(userId, Instant.now());
     }
 
+    /**
+     * Change password for authenticated user — SPEC §7.6.
+     * Verifies current password, rejects if too weak, invalidates all sessions.
+     */
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new InvalidCredentialsException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new InvalidCredentialsException("Current password is incorrect");
+        }
+
+        // SPEC §7.6: min length 8, must differ from current
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("New password must be at least 8 characters");
+        }
+        if (newPassword.equals(currentPassword)) {
+            throw new IllegalArgumentException("New password must differ from current password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Invalidate all sessions on password change (defense in depth)
+        sessionRepository.revokeAllByUserId(userId, Instant.now());
+        log.info("Password changed for user id={}, all sessions revoked", userId);
+    }
+
     public record LoginResult(String accessToken, String refreshToken, AuthResponse response) {}
 }

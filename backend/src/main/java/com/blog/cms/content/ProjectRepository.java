@@ -22,4 +22,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     Page<Project> findFeatured(Pageable pageable);
 
     boolean existsBySlug(String slug);
+
+    long countByDeletedAtIsNull();
 }

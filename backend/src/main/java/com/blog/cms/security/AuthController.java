@@ -2,6 +2,7 @@ package com.blog.cms.security;
 
 import com.blog.cms.config.BlogProperties;
 import com.blog.cms.security.dto.AuthResponse;
+import com.blog.cms.security.dto.ChangePasswordRequest;
 import com.blog.cms.security.dto.LoginRequest;
 import com.blog.cms.security.dto.RefreshRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -149,6 +150,25 @@ public class AuthController {
         cookieUtils.addCsrfCookie(response, csrfToken, 86400);
         Map<String, Object> body = new java.util.LinkedHashMap<>();
         body.put("data", Map.of("csrfToken", csrfToken, "headerName", props.getCsrf().getHeaderName()));
+        body.put("error", null);
+        body.put("meta", Map.of("timestamp", Instant.now().toString()));
+        return ResponseEntity.ok(body);
+    }
+
+    /**
+     * POST /api/admin/auth/change-password — change password for current user.
+     * Body: { currentPassword, newPassword }
+     * Invalidates all existing sessions.
+     */
+    @PostMapping("/change-password")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest req,
+            @AuthenticationPrincipal BlogUserDetails user) {
+        authService.changePassword(user.getId(), req.getCurrentPassword(), req.getNewPassword());
+
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("data", Map.of("message", "Password changed. Please log in again."));
         body.put("error", null);
         body.put("meta", Map.of("timestamp", Instant.now().toString()));
         return ResponseEntity.ok(body);

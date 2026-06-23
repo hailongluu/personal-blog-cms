@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -150,5 +151,40 @@ class AuthServiceTest {
                 () -> authService.refresh(r1.refreshToken()));
         assertThrows(InvalidCredentialsException.class,
                 () -> authService.refresh(r2.refreshToken()));
+    }
+
+    @Test
+    void changePassword_validCurrentPassword_succeedsAndRevokesSessions() {
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        AuthService.LoginResult r1 = authService.login(req, "Agent1", "1.1.1.1");
+
+        authService.changePassword(testUser.getId(), "password123", "newSecret99");
+
+        // Old sessions should be revoked
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.refresh(r1.refreshToken()));
+
+        // New login should work with the new password
+        LoginRequest newReq = new LoginRequest("test@example.com", "newSecret99");
+        AuthService.LoginResult r2 = authService.login(newReq, "Agent", "3.3.3.3");
+        assertThat(r2.accessToken()).isNotBlank();
+    }
+
+    @Test
+    void changePassword_wrongCurrentPassword_throws() {
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.changePassword(testUser.getId(), "wrong-password", "newSecret99"));
+    }
+
+    @Test
+    void changePassword_tooShort_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.changePassword(testUser.getId(), "password123", "short"));
+    }
+
+    @Test
+    void changePassword_sameAsCurrent_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.changePassword(testUser.getId(), "password123", "password123"));
     }
 }
