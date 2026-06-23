@@ -20,25 +20,8 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold text-text mb-1">Dashboard</h1>
-        <p className="text-text-muted">Loading...</p>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold text-text mb-1">Dashboard</h1>
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error || 'No data'}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="p-6"><h1 className="text-2xl font-bold">Dashboard</h1><p className="text-text-muted">Loading...</p></div>;
+  if (error || !data) return <div className="p-6"><h1 className="text-2xl font-bold">Dashboard</h1><p className="text-red-600">{error || 'No data'}</p></div>;
 
   const mainStats = [
     { label: 'Posts',     icon: FileText,    value: data.totalPosts,    sub: `${data.publishedPosts} published` },
@@ -57,7 +40,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div>
+    <div className="p-6">
       <h1 className="text-2xl font-bold text-text mb-1">Dashboard</h1>
       <p className="text-text-muted mb-6">Welcome back, {user?.displayName}!</p>
 
@@ -103,13 +86,13 @@ export default function DashboardPage() {
               View all →
             </Link>
           </div>
-          {data.recentPosts.length === 0 ? (
+          {(data.recentPosts?.length ?? 0) === 0 ? (
             <p className="text-sm text-text-muted py-4 text-center">No published posts yet.</p>
           ) : (
             <ul className="divide-y divide-border">
-              {data.recentPosts.map((p) => (
+              {data.recentPosts?.map((p) => (
                 <li key={p.id} className="py-2.5 flex items-start gap-2">
-                  {p.featured && <Star size={14} className="mt-1 text-amber-500 fill-amber-500 shrink-0" />}
+                  {p.featured && <Star size={14} className="mt-1 text-amber-500 shrink-0" />}
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/admin/posts/${p.id}`}
@@ -119,8 +102,7 @@ export default function DashboardPage() {
                     </Link>
                     <p className="text-xs text-text-muted mt-0.5">
                       <span className="font-mono uppercase">{p.type}</span>
-                      {' · '}
-                      {new Date(p.updatedAt).toLocaleDateString()}
+                      {' · '}{new Date(p.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
                 </li>
@@ -137,11 +119,11 @@ export default function DashboardPage() {
               View all →
             </Link>
           </div>
-          {data.drafts.length === 0 ? (
-            <p className="text-sm text-text-muted py-4 text-center">No drafts. 🎉</p>
+          {(data.pendingDrafts?.length ?? 0) === 0 ? (
+            <p className="text-sm text-text-muted py-4 text-center">No drafts.</p>
           ) : (
             <ul className="divide-y divide-border">
-              {data.drafts.map((p) => (
+              {data.pendingDrafts?.map((p) => (
                 <li key={p.id} className="py-2.5 flex items-start gap-2">
                   <Edit3 size={14} className="mt-1 text-stone-400 shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -153,8 +135,7 @@ export default function DashboardPage() {
                     </Link>
                     <p className="text-xs text-text-muted mt-0.5">
                       <span className="font-mono uppercase">{p.type}</span>
-                      {' · '}
-                      Updated {new Date(p.updatedAt).toLocaleDateString()}
+                      {' · '}Updated {new Date(p.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
                 </li>

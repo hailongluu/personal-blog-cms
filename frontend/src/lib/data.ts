@@ -83,7 +83,7 @@ export interface DashboardData {
     id: number; title: string; slug: string; status: string;
     type: string; featured: boolean; updatedAt: string;
   }>;
-  drafts: Array<{
+  pendingDrafts: Array<{
     id: number; title: string; slug: string; status: string;
     type: string; updatedAt: string;
   }>;
