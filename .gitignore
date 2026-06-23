@@ -1,0 +1,131 @@
+# ============================================
+# OS
+# ============================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ============================================
+# IDE
+# ============================================
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# ============================================
+# Java / Maven / Spring Boot
+# ============================================
+target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
+.mvn/
+mvnw
+mvnw.cmd
+
+# ============================================
+# Node / npm / Vite
+# ============================================
+node_modules/
+dist/
+dist-ssr/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vite/
+*.local
+.pnpm-store/
+
+# ============================================
+# TypeScript
+# ============================================
+*.tsbuildinfo
+
+# ============================================
+# Environment files (SECURITY - never commit)
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+uploads_data/
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================
+# Backups
+# ============================================
+backup/
+*.sql.gz
+*.dump
+
+# ============================================
+# Media uploads (never commit user data)
+# ============================================
+data/uploads/
+/uploads/
+backend/uploads/
+
+# ============================================
+# Test coverage
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+.coverage
+htmlcov/
+
+# ============================================
+# Secrets (CRITICAL)
+# ============================================
+*.pem
+*.key
+*.crt
+*.p12
+keystore.jks
+secrets/
+
+# ============================================
+# Harness artifacts (per repo-harness)
+# ============================================
+harness.db
+harness.db-journal
+harness.db-wal
+harness.db-shm
+.harness-cache/

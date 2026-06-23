@@ -1,0 +1,135 @@
+# =============================================================================
+# Personal Blog CMS — Docker Compose (production layout)
+# =============================================================================
+# Single-VPS deployment: 4 core CPU / 8 GB RAM / >= 80 GB SSD
+#
+# Services:
+#   - postgres       : PostgreSQL 17 with tuned postgresql.conf
+#   - blog-api       : Spring Boot 3 / Java 21 monolith
+#   - nginx          : Reverse proxy + static + SSL termination
+#   - admin-frontend : Built React/Vite SPA (mounted as volume from local build)
+#   - public-frontend: Built React/Vite SPA (mounted as volume from local build)
+#
+# Memory budget on 8 GB host:
+#   postgres       ~1.5 GB
+#   blog-api       ~1.5 GB (Xmx1536m)
+#   nginx          ~50 MB
+#   OS + buffer    ~5 GB
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: blog-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=1GB"
+      - "-c"
+      - "effective_cache_size=4GB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "max_connections=50"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "max_wal_size=2GB"
+      - "-c"
+      - "min_wal_size=512MB"
+      - "-c"
+      - "log_min_duration_statement=500ms"
+      - "-c"
+      - "log_lock_waits=on"
+      - "-c"
+      - "timezone=UTC"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      # Internal only — only the API container reaches this.
+      # Mapped to 5434 on host (5432 taken by postgres-local container,
+      # 5433 by host's systemd PostgreSQL 16).
+      - "127.0.0.1:5434:5432"
+
+  blog-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: blog-api
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx1536m -XX:+UseG1GC}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+      APP_BASE_URL: ${APP_BASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-Lax}
+    volumes:
+      - uploads_data:${UPLOAD_DIR:-/data/uploads}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      # Internal only — Nginx talks to the API.
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/liveness || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: blog-nginx
+    restart: unless-stopped
+    depends_on:
+      blog-api:
+        condition: service_healthy
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./admin-frontend/dist:/usr/share/nginx/html/admin:ro
+      - ./public-frontend/dist:/usr/share/nginx/html/public:ro
+      - uploads_data:/data/uploads:ro
+      - ./deploy/certs:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
+    name: blog_postgres_data
+  uploads_data:
+    name: blog_uploads_data
+
+networks:
+  default:
+    name: blog_net
