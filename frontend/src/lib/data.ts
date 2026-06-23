@@ -1,6 +1,5 @@
 import { api } from '@/lib/api';
-import type { Post, Topic, Tag, Project, Media, PagedResponse } from '@/types';
-
+import type { Post, Topic, Tag, Project, Media, Settings, PagedResponse } from '@/types';
 // ─── Posts ────────────────────────────────────────────────
 export const postsApi = {
   list: (params?: Record<string, string>) =>
@@ -51,4 +50,11 @@ export const mediaApi = {
     }).then(r => r.data.data);
   },
   delete: (id: number) => api.delete(`/admin/media/${id}`),
+};
+
+// ─── Settings ──────────────────────────────────────────────
+export const settingsApi = {
+  getAdmin: () => api.get<{ data: Settings }>('/admin/settings').then(r => r.data.data),
+  update: (data: Settings) => api.patch<{ data: Settings }>('/admin/settings', data).then(r => r.data.data),
+  getPublic: () => api.get<{ data: Settings }>('/public/settings').then(r => r.data.data),
 };

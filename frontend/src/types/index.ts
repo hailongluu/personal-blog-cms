@@ -69,6 +69,18 @@ export interface PagedResponse<T> {
   meta: { page: number; pageSize: number; totalItems: number; totalPages: number };
 }
 
+export interface Settings {
+  "site.title"?: string;
+  "site.description"?: string;
+  "site.author"?: string;
+  "site.author_bio"?: string;
+  "social.github"?: string;
+  "social.linkedin"?: string;
+  "social.x"?: string;
+  "social.youtube"?: string;
+  "site.email"?: string;
+}
+
 export interface ApiResponse<T> {
   data: T;
   error?: { code: string; message: string };

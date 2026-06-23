@@ -12,6 +12,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: '0.0.0.0',
+    allowedHosts: ['longluu-home-2', 'localhost', '192.168.1.4', '100.81.30.26', '.local'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
