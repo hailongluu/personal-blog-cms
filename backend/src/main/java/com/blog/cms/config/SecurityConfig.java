@@ -70,6 +70,9 @@ public class SecurityConfig {
                                 "/actuator/health",
                                 "/actuator/info",
                                 "/uploads/**",
+                                "/robots.txt",
+                                "/sitemap.xml",
+                                "/.well-known/**",
                                 "/error"
                         ).permitAll()
                         .requestMatchers(

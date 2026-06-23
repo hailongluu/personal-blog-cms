@@ -52,4 +52,53 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT COUNT(p) FROM Post p WHERE p.status = 'published' AND p.deletedAt IS NULL")
     long countPublished();
+
+    // --- Public API queries ---
+
+    @Query(value = """
+        SELECT p FROM Post p
+        LEFT JOIN FETCH p.author
+        LEFT JOIN FETCH p.topic
+        WHERE p.status = 'published'
+        AND p.visibility = 'public'
+        AND p.deletedAt IS NULL
+        ORDER BY p.publishedAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(p) FROM Post p
+        WHERE p.status = 'published'
+        AND p.visibility = 'public'
+        AND p.deletedAt IS NULL
+        """)
+    Page<Post> findPublishedPosts(Pageable pageable);
+
+    @Query("""
+        SELECT p FROM Post p
+        LEFT JOIN FETCH p.author
+        LEFT JOIN FETCH p.topic
+        WHERE p.slug = :slug
+        AND p.status = 'published'
+        AND p.visibility = 'public'
+        AND p.deletedAt IS NULL
+        """)
+    Optional<Post> findPublishedBySlug(@Param("slug") String slug);
+
+    @Query(value = """
+        SELECT p FROM Post p
+        LEFT JOIN FETCH p.author
+        LEFT JOIN FETCH p.topic
+        WHERE p.topic.slug = :topicSlug
+        AND p.status = 'published'
+        AND p.visibility = 'public'
+        AND p.deletedAt IS NULL
+        ORDER BY p.publishedAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(p) FROM Post p
+        WHERE p.topic.slug = :topicSlug
+        AND p.status = 'published'
+        AND p.visibility = 'public'
+        AND p.deletedAt IS NULL
+        """)
+    Page<Post> findPublishedByTopicSlug(@Param("topicSlug") String topicSlug, Pageable pageable);
 }

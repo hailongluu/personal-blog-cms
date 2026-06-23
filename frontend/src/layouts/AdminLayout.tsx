@@ -7,12 +7,12 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/posts', icon: FileText, label: 'Posts' },
-  { to: '/topics', icon: FolderTree, label: 'Topics' },
-  { to: '/tags', icon: Tags, label: 'Tags' },
-  { to: '/projects', icon: Briefcase, label: 'Projects' },
-  { to: '/media', icon: Image, label: 'Media' },
+  { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/admin/posts', icon: FileText, label: 'Posts' },
+  { to: '/admin/topics', icon: FolderTree, label: 'Topics' },
+  { to: '/admin/tags', icon: Tags, label: 'Tags' },
+  { to: '/admin/projects', icon: Briefcase, label: 'Projects' },
+  { to: '/admin/media', icon: Image, label: 'Media' },
 ];
 
 export default function AdminLayout() {
@@ -38,7 +38,7 @@ export default function AdminLayout() {
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={to === '/admin'}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",

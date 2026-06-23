@@ -65,11 +65,13 @@ public class CsrfTokenFilter extends OncePerRequestFilter {
 
         // 2. Mutating methods — require CSRF match
         // Skip CSRF for auth endpoints (login/refresh/logout) since user isn't authenticated yet
+        // Skip CSRF for public API endpoints (newsletter signup, etc.)
         String path = request.getRequestURI();
         boolean isAuthEndpoint = path.startsWith("/api/admin/auth/login")
                 || path.startsWith("/api/admin/auth/refresh");
+        boolean isPublicEndpoint = path.startsWith("/api/public/");
 
-        if (isAuthEndpoint) {
+        if (isAuthEndpoint || isPublicEndpoint) {
             filterChain.doFilter(request, response);
             return;
         }

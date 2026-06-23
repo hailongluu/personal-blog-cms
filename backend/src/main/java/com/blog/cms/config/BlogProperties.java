@@ -16,10 +16,19 @@ import java.util.List;
 @Setter
 public class BlogProperties {
 
+    private Site site = new Site();
     private Upload upload = new Upload();
     private Jwt jwt = new Jwt();
     private Cookie cookie = new Cookie();
     private Csrf csrf = new Csrf();
+
+    @Getter
+    @Setter
+    public static class Site {
+        private String title = "My Blog";
+        private String description = "A personal blog";
+        private String url = "http://localhost:8080";
+    }
 
     @Getter
     @Setter

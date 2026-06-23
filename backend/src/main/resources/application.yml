@@ -52,6 +52,10 @@ server:
     include-binding-errors: always
 
 blog:
+  site:
+    title: ${BLOG_TITLE:My Personal Blog}
+    description: ${BLOG_DESCRIPTION:A blog about tech, code, and life}
+    url: ${BLOG_URL:http://localhost:8080}
   upload:
     base-dir: ${UPLOAD_BASE_DIR:/data/uploads}
     max-file-size-bytes: 10485760
