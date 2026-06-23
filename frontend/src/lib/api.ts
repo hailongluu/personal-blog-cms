@@ -18,15 +18,14 @@ async function refreshCsrf(): Promise<string | null> {
   }
 }
 
-// Interceptor: attach CSRF token to state-changing requests
+// Interceptor: always refresh CSRF token for state-changing requests
 api.interceptors.request.use(async (config) => {
   const method = config.method?.toUpperCase();
   if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    if (!csrfToken) {
-      await refreshCsrf();
-    }
-    if (csrfToken) {
-      config.headers['X-CSRF-Token'] = csrfToken;
+    // Always refresh to ensure cookie + header match (login regenerates cookie)
+    const token = await refreshCsrf();
+    if (token) {
+      config.headers['X-CSRF-Token'] = token;
     }
   }
   return config;

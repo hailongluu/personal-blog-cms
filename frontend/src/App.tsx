@@ -3,7 +3,11 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import AdminLayout from '@/layouts/AdminLayout';
 import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
-import PostsPage, { TopicsPage, TagsPage, ProjectsPage, MediaPage } from '@/pages/PlaceholderPages';
+import PostsPage from '@/pages/PostsPage';
+import TopicsPage from '@/pages/TopicsPage';
+import TagsPage from '@/pages/TagsPage';
+import ProjectsPage from '@/pages/ProjectsPage';
+import MediaPage from '@/pages/MediaPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

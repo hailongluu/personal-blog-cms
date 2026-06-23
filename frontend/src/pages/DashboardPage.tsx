@@ -1,16 +1,41 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { postsApi, topicsApi, tagsApi, projectsApi, mediaApi } from '@/lib/data';
 import { FileText, FolderTree, Tags, Briefcase, Image } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-
-  const stats = [
+  const [stats, setStats] = useState([
     { label: 'Posts', icon: FileText, value: '—' },
     { label: 'Topics', icon: FolderTree, value: '—' },
     { label: 'Tags', icon: Tags, value: '—' },
     { label: 'Projects', icon: Briefcase, value: '—' },
     { label: 'Media', icon: Image, value: '—' },
-  ];
+  ]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [posts, topics, tags, projects, media] = await Promise.all([
+          postsApi.list().catch(() => ({ meta: { totalItems: 0 } })),
+          topicsApi.list().catch(() => []),
+          tagsApi.list().catch(() => []),
+          projectsApi.list().catch(() => ({ meta: { totalItems: 0 } })),
+          mediaApi.list().catch(() => ({ meta: { totalItems: 0 } })),
+        ]);
+        setStats([
+          { label: 'Posts', icon: FileText, value: String(posts.meta?.totalItems ?? 0) },
+          { label: 'Topics', icon: FolderTree, value: String(topics.length) },
+          { label: 'Tags', icon: Tags, value: String(tags.length) },
+          { label: 'Projects', icon: Briefcase, value: String(projects.meta?.totalItems ?? 0) },
+          { label: 'Media', icon: Image, value: String(media.meta?.totalItems ?? 0) },
+        ]);
+      } catch (e) {
+        console.error('Failed to load dashboard stats', e);
+      }
+    }
+    load();
+  }, []);
 
   return (
     <div>
@@ -27,11 +52,6 @@ export default function DashboardPage() {
             <p className="text-2xl font-bold text-text">{value}</p>
           </div>
         ))}
-      </div>
-
-      <div className="mt-8 p-8 bg-surface rounded-xl border border-border text-center text-text-muted">
-        <p className="text-lg">🚀 Story 4 complete — Admin shell ready</p>
-        <p className="text-sm mt-1">CRUD pages coming in Story 5 (Editor) + Story 6 (Public)</p>
       </div>
     </div>
   );

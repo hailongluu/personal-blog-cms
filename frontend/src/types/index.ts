@@ -1,0 +1,76 @@
+export interface Post {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  contentMarkdown: string;
+  contentHtml: string;
+  coverImageUrl: string | null;
+  status: 'draft' | 'reviewing' | 'published' | 'archived';
+  visibility: 'public' | 'unlisted' | 'private';
+  author: { id: number; displayName: string; avatarUrl: string | null };
+  topic: { id: number; name: string; slug: string; color: string } | null;
+  tags: { id: number; name: string; slug: string }[];
+  readingTimeMin: number;
+  viewCount: number;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Topic {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string | null;
+  icon: string | null;
+  parentId: number | null;
+  children: Topic[];
+  sortOrder: number;
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+  createdAt: string;
+}
+
+export interface Project {
+  id: number;
+  title: string;
+  slug: string;
+  description: string | null;
+  contentMarkdown: string | null;
+  coverImageUrl: string | null;
+  projectUrl: string | null;
+  repoUrl: string | null;
+  techStack: string[];
+  status: string;
+  isFeatured: boolean;
+  sortOrder: number;
+}
+
+export interface Media {
+  id: number;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  publicUrl: string;
+  altText: string | null;
+  caption: string | null;
+  createdAt: string;
+}
+
+export interface PagedResponse<T> {
+  data: T[];
+  meta: { page: number; pageSize: number; totalItems: number; totalPages: number };
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  error?: { code: string; message: string };
+  meta?: { page: number; pageSize: number; totalItems: number; totalPages: number };
+}
