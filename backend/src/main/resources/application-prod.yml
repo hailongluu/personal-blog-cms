@@ -8,7 +8,12 @@ logging:
     com.blog.cms: INFO
 blog:
   cookie:
-    secure: true
+    # Allow COOKIE_SECURE env var to override default (true in prod, but
+    # dev/CI running on HTTP must set COOKIE_SECURE=false or browsers will
+    # reject the Secure cookie and break CSRF login flow).
+    secure: ${COOKIE_SECURE:true}
+  csrf:
+    enabled: ${CSRF_ENABLED:true}
 server:
   error:
     include-message: never
