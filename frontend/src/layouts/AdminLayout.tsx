@@ -1,7 +1,7 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  LayoutDashboard, FileText, FolderTree, Tags, Briefcase, Image, Settings, LogOut, Menu, X
+  LayoutDashboard, FileText, FolderTree, Tags, Briefcase, Image, Settings, User, LogOut, Menu, X
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,7 @@ const navItems = [
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -65,10 +66,18 @@ export default function AdminLayout() {
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-bg">
             <Menu size={20} />
           </button>
-          <div className="flex items-center gap-4 ml-auto">
-            <span className="text-sm text-text-muted">
-              {user?.displayName} <span className="text-xs bg-primary-light/20 text-primary-dark px-2 py-0.5 rounded-full">{user?.role}</span>
-            </span>
+          <div className="flex items-center gap-3 ml-auto">
+            <button
+              onClick={() => navigate('/admin/profile')}
+              className="text-sm text-text-muted hover:text-text transition-colors"
+              title="View profile / change password"
+            >
+              <User size={14} className="inline mr-1" />
+              {user?.displayName}
+              <span className="ml-2 text-xs bg-primary-light/20 text-primary-dark px-2 py-0.5 rounded-full">
+                {user?.role}
+              </span>
+            </button>
             <button
               onClick={logout}
               className="flex items-center gap-1 text-sm text-text-muted hover:text-red-600 transition-colors"

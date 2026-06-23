@@ -11,6 +11,7 @@ import TagsPage from '@/pages/TagsPage';
 import ProjectsPage from '@/pages/ProjectsPage';
 import MediaPage from '@/pages/MediaPage';
 import SettingsPage from '@/pages/SettingsPage';
+import ProfilePage from '@/pages/ProfilePage';
 import HomePage from '@/pages/public/HomePage';
 import BlogListPage from '@/pages/public/BlogListPage';
 import BlogDetailPage from '@/pages/public/BlogDetailPage';
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="media" element={<MediaPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
             </Route>
 
             {/* Catch-all */}

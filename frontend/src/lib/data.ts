@@ -66,3 +66,37 @@ export const settingsApi = {
   update: (data: Settings) => api.patch<{ data: Settings }>('/admin/settings', data).then(r => r.data.data),
   getPublic: () => api.get<{ data: Settings }>('/public/settings').then(r => r.data.data),
 };
+
+// ─── Dashboard (SPEC §8.4) ─────────────────────────────────
+export interface DashboardData {
+  totalPosts: number;
+  publishedPosts: number;
+  draftPosts: number;
+  reviewingPosts: number;
+  archivedPosts: number;
+  totalTopics: number;
+  totalTags: number;
+  totalProjects: number;
+  totalMedia: number;
+  newsletterSubscribers: number;
+  recentPosts: Array<{
+    id: number; title: string; slug: string; status: string;
+    type: string; featured: boolean; updatedAt: string;
+  }>;
+  drafts: Array<{
+    id: number; title: string; slug: string; status: string;
+    type: string; updatedAt: string;
+  }>;
+}
+export const dashboardApi = {
+  get: () => api.get<{ data: DashboardData }>('/admin/dashboard').then(r => r.data.data),
+};
+
+// ─── Auth (admin) ─────────────────────────────────────────
+export const authApi = {
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post<{ data: { message: string } }>('/admin/auth/change-password', {
+      currentPassword,
+      newPassword,
+    }).then(r => r.data.data),
+};

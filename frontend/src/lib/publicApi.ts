@@ -20,8 +20,8 @@ export async function getPostBySlug(slug: string) {
 }
 
 export async function getFeaturedPosts(limit = 3) {
-  const res = await publicApi.get<PagedResponse<Post>>('/posts', {
-    params: { pageSize: limit, sort: 'publishedAt:desc' },
+  const res = await publicApi.get<PagedResponse<Post>>('/posts/featured', {
+    params: { limit },
   });
   return res.data.data;
 }
