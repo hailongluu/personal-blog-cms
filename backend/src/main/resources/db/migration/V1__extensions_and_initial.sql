@@ -34,7 +34,7 @@ CREATE TABLE roles (
 
 CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
-    email           CITEXT       NOT NULL UNIQUE,
+    email           VARCHAR(255) NOT NULL UNIQUE,    -- always stored lowercase (enforced by app)
     password_hash   VARCHAR(255) NOT NULL,        -- bcrypt
     display_name    VARCHAR(100) NOT NULL,
     avatar_url      TEXT,
@@ -60,7 +60,7 @@ CREATE TABLE sessions (
     user_id         BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     refresh_token   VARCHAR(500) NOT NULL UNIQUE,
     user_agent      TEXT,
-    ip_address      INET,
+    ip_address      VARCHAR(45),                -- IPv6 max string length
     expires_at      TIMESTAMPTZ  NOT NULL,
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
     revoked_at      TIMESTAMPTZ

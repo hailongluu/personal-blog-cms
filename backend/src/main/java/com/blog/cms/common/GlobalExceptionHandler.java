@@ -24,41 +24,62 @@ public class GlobalExceptionHandler {
                 fieldErrors.put(fe.getField(), fe.getDefaultMessage())
         );
 
-        Map<String, Object> response = Map.of(
-                "data", null,
-                "error", Map.of(
-                        "code", "VALIDATION_ERROR",
-                        "message", "Request validation failed",
-                        "details", fieldErrors
-                ),
-                "meta", Map.of("timestamp", Instant.now().toString())
-        );
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("data", null);
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        error.put("code", "VALIDATION_ERROR");
+        error.put("message", "Request validation failed");
+        error.put("details", fieldErrors);
+        response.put("error", error);
+        response.put("meta", Map.of("timestamp", Instant.now().toString()));
         return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
-        Map<String, Object> response = Map.of(
-                "data", null,
-                "error", Map.of(
-                        "code", "BAD_REQUEST",
-                        "message", ex.getMessage() != null ? ex.getMessage() : "Bad request"
-                ),
-                "meta", Map.of("timestamp", Instant.now().toString())
-        );
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("data", null);
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        error.put("code", "BAD_REQUEST");
+        error.put("message", ex.getMessage() != null ? ex.getMessage() : "Bad request");
+        response.put("error", error);
+        response.put("meta", Map.of("timestamp", Instant.now().toString()));
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(com.blog.cms.security.InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleAuth(com.blog.cms.security.InvalidCredentialsException ex) {
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("data", null);
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        error.put("code", "INVALID_CREDENTIALS");
+        error.put("message", ex.getMessage() != null ? ex.getMessage() : "Invalid credentials");
+        response.put("error", error);
+        response.put("meta", Map.of("timestamp", Instant.now().toString()));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("data", null);
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        error.put("code", "ACCESS_DENIED");
+        error.put("message", "You don't have permission to access this resource");
+        response.put("error", error);
+        response.put("meta", Map.of("timestamp", Instant.now().toString()));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        Map<String, Object> response = Map.of(
-                "data", null,
-                "error", Map.of(
-                        "code", "INTERNAL_ERROR",
-                        "message", "An unexpected error occurred"
-                ),
-                "meta", Map.of("timestamp", Instant.now().toString())
-        );
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("data", null);
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        error.put("code", "INTERNAL_ERROR");
+        error.put("message", "An unexpected error occurred");
+        response.put("error", error);
+        response.put("meta", Map.of("timestamp", Instant.now().toString()));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }

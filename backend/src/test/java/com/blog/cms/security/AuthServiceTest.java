@@ -1,0 +1,154 @@
+package com.blog.cms.security;
+
+import com.blog.cms.security.dto.AuthResponse;
+import com.blog.cms.security.dto.LoginRequest;
+import com.blog.cms.user.Role;
+import com.blog.cms.user.RoleRepository;
+import com.blog.cms.user.SessionRepository;
+import com.blog.cms.user.User;
+import com.blog.cms.user.UserRepository;
+import io.jsonwebtoken.Claims;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * AuthService unit tests — RED-GREEN-REFACTOR.
+ * Covers: login success, invalid credentials, refresh, logout, logout-all.
+ */
+@SpringBootTest
+@ActiveProfiles("test")
+class AuthServiceTest {
+
+    @Autowired private AuthService authService;
+    @Autowired private UserRepository userRepository;
+    @Autowired private RoleRepository roleRepository;
+    @Autowired private SessionRepository sessionRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private JwtService jwtService;
+
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        sessionRepository.deleteAll();
+        userRepository.findAll().forEach(u -> {
+            if (!"admin@example.com".equals(u.getEmail())) {
+                userRepository.delete(u);
+            }
+        });
+        roleRepository.findAll().forEach(r -> {
+            if (!"admin".equals(r.getName())) {
+                roleRepository.delete(r);
+            }
+        });
+
+        Role adminRole = roleRepository.findByName("admin").orElseGet(() ->
+                roleRepository.save(Role.builder()
+                        .name("admin")
+                        .description("Test admin")
+                        .build()));
+
+        testUser = userRepository.findByEmailWithRole("test@example.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .email("test@example.com")
+                        .passwordHash(passwordEncoder.encode("password123"))
+                        .displayName("Test User")
+                        .role(adminRole)
+                        .isActive(true)
+                        .build()));
+    }
+
+    @Test
+    void login_validCredentials_returnsTokens() {
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        AuthService.LoginResult result = authService.login(req, "TestAgent", "127.0.0.1");
+
+        assertNotNull(result.accessToken());
+        assertNotNull(result.refreshToken());
+        assertEquals("test@example.com", result.response().email());
+        assertEquals("admin", result.response().role());
+        assertNotNull(result.response().accessExpiresAt());
+        assertNotNull(result.response().refreshExpiresAt());
+
+        // Verify JWT claims
+        Claims claims = jwtService.parseAndVerify(result.accessToken());
+        assertEquals(String.valueOf(testUser.getId()), claims.getSubject());
+        assertEquals("admin", claims.get("role"));
+        assertEquals("access", claims.get("type"));
+    }
+
+    @Test
+    void login_invalidPassword_throwsException() {
+        LoginRequest req = new LoginRequest("test@example.com", "wrong-password");
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.login(req, "TestAgent", "127.0.0.1"));
+    }
+
+    @Test
+    void login_unknownEmail_throwsException() {
+        LoginRequest req = new LoginRequest("unknown@example.com", "password123");
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.login(req, "TestAgent", "127.0.0.1"));
+    }
+
+    @Test
+    void login_inactiveUser_throwsException() {
+        testUser.setIsActive(false);
+        userRepository.save(testUser);
+
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.login(req, "TestAgent", "127.0.0.1"));
+    }
+
+    @Test
+    void refresh_validToken_returnsNewTokens() {
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        AuthService.LoginResult initial = authService.login(req, "TestAgent", "127.0.0.1");
+
+        AuthService.LoginResult refreshed = authService.refresh(initial.refreshToken());
+
+        assertNotNull(refreshed.accessToken());
+        assertNotNull(refreshed.refreshToken());
+        assertNotEquals(initial.refreshToken(), refreshed.refreshToken(),
+                "Refresh token should rotate");
+    }
+
+    @Test
+    void refresh_invalidToken_throwsException() {
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.refresh("not-a-real-token"));
+    }
+
+    @Test
+    void logout_revokesSession() {
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        AuthService.LoginResult result = authService.login(req, "TestAgent", "127.0.0.1");
+
+        authService.logout(result.refreshToken());
+
+        // Try to refresh the revoked token — should fail
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.refresh(result.refreshToken()));
+    }
+
+    @Test
+    void logoutAll_revokesAllUserSessions() {
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        AuthService.LoginResult r1 = authService.login(req, "Agent1", "1.1.1.1");
+        AuthService.LoginResult r2 = authService.login(req, "Agent2", "2.2.2.2");
+
+        authService.logoutAll(testUser.getId());
+
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.refresh(r1.refreshToken()));
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.refresh(r2.refreshToken()));
+    }
+}

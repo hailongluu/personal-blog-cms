@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=USER
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -10,5 +10,22 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+        globally_quoted_identifiers: false
   flyway:
-    enabled: false  # H2 in test mode uses Hibernate ddl-auto
+    enabled: false
+blog:
+  jwt:
+    secret: test-secret-test-secret-test-secret-test-secret
+    access-token-ttl-seconds: 900
+    refresh-token-ttl-seconds: 604800
+  cookie:
+    secure: false
+    http-only: true
+    same-site: Lax
+  csrf:
+    enabled: true
+    header-name: X-CSRF-Token
+logging:
+  level:
+    org.flywaydb: WARN
+    com.blog.cms: DEBUG
