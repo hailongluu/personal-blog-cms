@@ -112,6 +112,11 @@ public class Post {
     @Column(name = "canonical_url", columnDefinition = "TEXT")
     private String canonicalUrl;
 
+    // --- Full-text search (generated tsvector column) ---
+    @Column(name = "search_vector", insertable = false, updatable = false, columnDefinition = "TEXT")
+    @org.hibernate.annotations.Generated(org.hibernate.annotations.GenerationTime.INSERT)
+    private String searchVector;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

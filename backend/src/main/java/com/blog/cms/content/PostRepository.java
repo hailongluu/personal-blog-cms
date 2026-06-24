@@ -72,6 +72,40 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     boolean existsBySlug(String slug);
 
     // ───────────────────────────────────────────────────────────
+    // Full-text search using tsvector + ts_rank
+    // ───────────────────────────────────────────────────────────
+
+    @Query(value = """
+        SELECT p FROM Post p
+        LEFT JOIN FETCH p.author
+        LEFT JOIN FETCH p.topic
+        LEFT JOIN p.tags t
+        WHERE p.deletedAt IS NULL
+        AND p.searchVector IS NOT NULL
+        AND function('plainto_tsquery', 'simple', :query) IS NOT NULL
+        AND function('ts_rank', p.searchVector, function('plainto_tsquery', 'simple', :query)) > 0
+        AND (:status IS NULL OR p.status = :status)
+        AND (:type   IS NULL OR p.type = :type)
+        ORDER BY function('ts_rank', p.searchVector, function('plainto_tsquery', 'simple', :query)) DESC,
+                 p.publishedAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(p) FROM Post p
+        LEFT JOIN p.tags t
+        WHERE p.deletedAt IS NULL
+        AND function('plainto_tsquery', 'simple', :query) IS NOT NULL
+        AND function('ts_rank', p.searchVector, function('plainto_tsquery', 'simple', :query)) > 0
+        AND (:status IS NULL OR p.status = :status)
+        AND (:type   IS NULL OR p.type = :type)
+        """)
+    Page<Post> searchFullText(
+        @Param("query") String query,
+        @Param("status") String status,
+        @Param("type") PostType type,
+        Pageable pageable
+    );
+
+    // ───────────────────────────────────────────────────────────
     // Dashboard counts — SPEC §8.2
     // ───────────────────────────────────────────────────────────
 

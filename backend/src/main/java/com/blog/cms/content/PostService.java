@@ -82,10 +82,17 @@ public class PostService {
             default             -> Sort.by(Sort.Direction.DESC, "updatedAt");
         };
         Pageable pageable = PageRequest.of(page - 1, size, sorting);
-        Page<Post> posts = postRepository.findFiltered(
-            status, typeFilter, topicId, authorId, tagId, featured,
-            search != null ? search.toLowerCase() : null,
-            pageable);
+
+        // Use full-text search when query is provided
+        Page<Post> posts;
+        String query = search != null && !search.isBlank() ? search.trim() : null;
+        if (query != null) {
+            posts = postRepository.searchFullText(query, status, typeFilter, pageable);
+        } else {
+            posts = postRepository.findFiltered(
+                status, typeFilter, topicId, authorId, tagId, featured,
+                null, pageable);
+        }
 
         var data = posts.getContent().stream().map(PostResponse::from).toList();
         return ApiResponse.paged(data, page, size, posts.getTotalElements());
