@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, type FormEvent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { postsApi } from '@/lib/data';
@@ -6,6 +6,7 @@ import type { Post, Topic, Tag, PostType } from '@/types';
 import { POST_TYPES } from '@/types';
 import { ArrowLeft, Eye, Edit3, ExternalLink } from 'lucide-react';
 import PreviewModal from '@/components/PreviewModal';
+import MarkdownToolbar from '@/components/MarkdownToolbar';
 
 interface Props {
   post: Post | null;
@@ -31,6 +32,7 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
   const [previewPost, setPreviewPost] = useState<Post | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -93,17 +95,21 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
       slug,
       subtitle,
       contentMarkdown,
+      contentHtml: '',
       excerpt,
       type,
       status,
       featured,
+      visibility: 'public',
+      coverImageUrl: '',
       topic: selectedTopic || undefined,
       tags: selectedTagObjs,
+      author: undefined,
       readingTimeMin: Math.max(1, Math.ceil(contentMarkdown.split(/\s+/).length / 200)),
       viewCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    } as Post;
+    } as unknown as Post;
   }
 
   return (
@@ -201,12 +207,16 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentMarkdown || '*No content yet*'}</ReactMarkdown>
             </div>
           ) : (
-            <textarea
-              value={contentMarkdown}
-              onChange={e => setContentMarkdown(e.target.value)}
-              className="w-full min-h-[300px] px-3 py-2 border border-border rounded-lg text-sm font-mono focus:ring-2 focus:ring-primary outline-none resize-y"
-              placeholder="Write your post in Markdown..."
-            />
+            <div className="border border-border rounded-lg overflow-hidden">
+              <MarkdownToolbar textareaRef={textareaRef} value={contentMarkdown} onChange={setContentMarkdown} />
+              <textarea
+                ref={textareaRef}
+                value={contentMarkdown}
+                onChange={e => setContentMarkdown(e.target.value)}
+                className="w-full min-h-[300px] px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary outline-none resize-y border-0 rounded-b-lg"
+                placeholder="Write your post in Markdown..."
+              />
+            </div>
           )}
         </div>
 
