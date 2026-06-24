@@ -1,0 +1,25 @@
+{
+  "loop": "blog-p2-features",
+  "started_at": "2026-06-24T19:12:00Z",
+  "current_feature": 1,
+  "current_iteration": 1,
+  "max_iterations": 12,
+  "features": [
+    {
+      "id": 1,
+      "name": "rss-feed",
+      "status": "delivered",
+      "plan": "Created RssFeedController at /api/public/feed.xml using Atom 1.0 format",
+      "delivery": "GET /api/public/feed.xml returns valid XML with 20 entries. 4 new unit tests pass. Full suite: 77/77.",
+      "review": "pending sếp approval",
+      "verification": {
+        "backend_tests_pass": "77/77",
+        "rss_endpoint_valid": "✅ valid Atom 1.0 XML, 20 entries, 17.4KB"
+      }
+    },
+    {"id": 2, "name": "sitemap-xml", "status": "pending", "plan": null, "delivery": null, "review": null},
+    {"id": 3, "name": "newsletter-send", "status": "pending", "plan": null, "delivery": null, "review": null},
+    {"id": 4, "name": "comments-system", "status": "pending", "plan": null, "delivery": null, "review": null}
+  ],
+  "stop_reason": null
+}

@@ -1,0 +1,340 @@
+{
+  "$schema": "https://github.com/ksimback/looper/schema/loop.resolved.v1.json",
+  "compiled_at": "2026-06-24T19:12:23+00:00",
+  "council": [
+    {
+      "cli": "human",
+      "id": "reviewer-1",
+      "invoke": [
+        "telegram:997864855"
+      ],
+      "local": false,
+      "model": "s\u1ebfp-long",
+      "note": "S\u1ebfp Long reviews plans before each feature is implemented, and verifies deliveries after each feature ships.\n",
+      "role": "judge",
+      "scope": [
+        "plan",
+        "delivery"
+      ],
+      "timeout_sec": 3600
+    }
+  ],
+  "council_by_id": {
+    "reviewer-1": {
+      "cli": "human",
+      "id": "reviewer-1",
+      "invoke": [
+        "telegram:997864855"
+      ],
+      "local": false,
+      "model": "s\u1ebfp-long",
+      "note": "S\u1ebfp Long reviews plans before each feature is implemented, and verifies deliveries after each feature ships.\n",
+      "role": "judge",
+      "scope": [
+        "plan",
+        "delivery"
+      ],
+      "timeout_sec": 3600
+    }
+  },
+  "criteria_by_id": {
+    "backend-build-ok": {
+      "check": [
+        "bash",
+        "-c",
+        "cd ~/vibe-code/personal-blog-cms/backend && mvn clean package -DskipTests -q"
+      ],
+      "expect": "exit_zero",
+      "id": "backend-build-ok",
+      "type": "programmatic"
+    },
+    "backend-tests-pass": {
+      "check": [
+        "bash",
+        "-c",
+        "cd ~/vibe-code/personal-blog-cms/backend && mvn test -q"
+      ],
+      "expect": "exit_zero",
+      "id": "backend-tests-pass",
+      "type": "programmatic"
+    },
+    "code-quality": {
+      "id": "code-quality",
+      "rubric": "Each feature implementation must (a) follow existing code patterns in the project, (b) have proper error handling, (c) include JavaDoc or comments on public APIs, (d) not introduce hardcoded values that should be config. Score PASS if all four hold; REVISE otherwise.\n",
+      "type": "judge"
+    },
+    "comments-api-works": {
+      "check": [
+        "bash",
+        "-c",
+        "curl -s 'http://localhost:8080/api/public/posts?pageSize=1' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get(\"data\",[{}])[0].get(\"id\",0))'"
+      ],
+      "contains": "",
+      "expect": "stdout_contains",
+      "id": "comments-api-works",
+      "type": "programmatic"
+    },
+    "frontend-build-ok": {
+      "check": [
+        "bash",
+        "-c",
+        "cd ~/vibe-code/personal-blog-cms/frontend && npm run build"
+      ],
+      "expect": "exit_zero",
+      "id": "frontend-build-ok",
+      "type": "programmatic"
+    },
+    "newsletter-api-works": {
+      "check": [
+        "bash",
+        "-c",
+        "curl -X POST http://localhost:8080/api/admin/newsletter/send-preview -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' | awk '{exit ($1 == 200 || $1 == 401)}'"
+      ],
+      "expect": "exit_zero",
+      "id": "newsletter-api-works",
+      "type": "programmatic"
+    },
+    "rss-endpoint-valid": {
+      "check": [
+        "bash",
+        "-c",
+        "curl -s http://localhost:8080/api/public/feed.xml | xmllint --noout -"
+      ],
+      "expect": "exit_zero",
+      "id": "rss-endpoint-valid",
+      "type": "programmatic"
+    },
+    "seo-correctness": {
+      "id": "seo-correctness",
+      "rubric": "RSS feed must follow Atom 2.0 or RSS 2.0 spec. Sitemap must follow sitemaps.org protocol. Both must include proper XML declaration and namespaces. Score PASS if compliant; REVISE otherwise.\n",
+      "type": "judge"
+    },
+    "sitemap-endpoint-valid": {
+      "check": [
+        "bash",
+        "-c",
+        "curl -s http://localhost:8080/api/public/sitemap.xml | xmllint --noout -"
+      ],
+      "expect": "exit_zero",
+      "id": "sitemap-endpoint-valid",
+      "type": "programmatic"
+    }
+  },
+  "execution": {
+    "isolation": "current_workspace",
+    "mode": "in_session",
+    "side_effects": {
+      "duplicate_action_check": true,
+      "note": "Each feature requires s\u1ebfp approval before moving to next",
+      "requires_approval": true
+    }
+  },
+  "gates": {
+    "delivery_gate": {
+      "criteria": [
+        "backend-tests-pass",
+        "frontend-build-ok"
+      ],
+      "max_revisions": 2,
+      "members": [
+        "reviewer-1"
+      ],
+      "verdict_policy": "revise_until_clean",
+      "verdict_source": "reviewer-1",
+      "when": "after_each_feature"
+    },
+    "plan_gate": {
+      "criteria": [
+        "code-quality",
+        "seo-correctness"
+      ],
+      "max_revisions": 2,
+      "members": [
+        "reviewer-1"
+      ],
+      "verdict_policy": "revise_until_clean",
+      "verdict_source": "reviewer-1",
+      "when": "before_each_feature"
+    }
+  },
+  "goal": {
+    "context_sources": [
+      {
+        "file": "~/vibe-code/personal-blog-cms/SPEC.md"
+      },
+      {
+        "file": "~/vibe-code/personal-blog-cms/README.md"
+      },
+      {
+        "file": "~/vibe-code/personal-blog-cms/backend/src/main/java/com/blog/cms/"
+      }
+    ],
+    "definition_of_done": "All 4 features shipped to main branch. Backend tests pass (target: 80+/80+). Frontend builds clean. Each feature has at least one curl/browser verify. README updated with new endpoints. No new bugs introduced.\n",
+    "statement": "Implement 4 P2 features for the personal-blog-cms Spring Boot + React app: (1) RSS/Atom feed for blog posts, (2) XML sitemap for public routes, (3) Newsletter email send to subscribers, (4) Comment system with nested replies. Each feature must follow TDD (RED \u2192 GREEN \u2192 REFACTOR), end with git commit, and be browser-verified.\n",
+    "verification": [
+      {
+        "check": [
+          "bash",
+          "-c",
+          "cd ~/vibe-code/personal-blog-cms/backend && mvn clean package -DskipTests -q"
+        ],
+        "expect": "exit_zero",
+        "id": "backend-build-ok",
+        "type": "programmatic"
+      },
+      {
+        "check": [
+          "bash",
+          "-c",
+          "cd ~/vibe-code/personal-blog-cms/backend && mvn test -q"
+        ],
+        "expect": "exit_zero",
+        "id": "backend-tests-pass",
+        "type": "programmatic"
+      },
+      {
+        "check": [
+          "bash",
+          "-c",
+          "cd ~/vibe-code/personal-blog-cms/frontend && npm run build"
+        ],
+        "expect": "exit_zero",
+        "id": "frontend-build-ok",
+        "type": "programmatic"
+      },
+      {
+        "check": [
+          "bash",
+          "-c",
+          "curl -s http://localhost:8080/api/public/feed.xml | xmllint --noout -"
+        ],
+        "expect": "exit_zero",
+        "id": "rss-endpoint-valid",
+        "type": "programmatic"
+      },
+      {
+        "check": [
+          "bash",
+          "-c",
+          "curl -s http://localhost:8080/api/public/sitemap.xml | xmllint --noout -"
+        ],
+        "expect": "exit_zero",
+        "id": "sitemap-endpoint-valid",
+        "type": "programmatic"
+      },
+      {
+        "check": [
+          "bash",
+          "-c",
+          "curl -X POST http://localhost:8080/api/admin/newsletter/send-preview -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' | awk '{exit ($1 == 200 || $1 == 401)}'"
+        ],
+        "expect": "exit_zero",
+        "id": "newsletter-api-works",
+        "type": "programmatic"
+      },
+      {
+        "check": [
+          "bash",
+          "-c",
+          "curl -s 'http://localhost:8080/api/public/posts?pageSize=1' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get(\"data\",[{}])[0].get(\"id\",0))'"
+        ],
+        "contains": "",
+        "expect": "stdout_contains",
+        "id": "comments-api-works",
+        "type": "programmatic"
+      },
+      {
+        "id": "code-quality",
+        "rubric": "Each feature implementation must (a) follow existing code patterns in the project, (b) have proper error handling, (c) include JavaDoc or comments on public APIs, (d) not introduce hardcoded values that should be config. Score PASS if all four hold; REVISE otherwise.\n",
+        "type": "judge"
+      },
+      {
+        "id": "seo-correctness",
+        "rubric": "RSS feed must follow Atom 2.0 or RSS 2.0 spec. Sitemap must follow sitemaps.org protocol. Both must include proper XML declaration and namespaces. Score PASS if compliant; REVISE otherwise.\n",
+        "type": "judge"
+      }
+    ]
+  },
+  "host": {
+    "cli": "hermes-agent",
+    "invoke": [
+      "hermes"
+    ],
+    "model": "MiniMax-M3",
+    "timeout_sec": 7200
+  },
+  "loop_control": {
+    "budget": {
+      "tokens": 2000000,
+      "usd": 0.5,
+      "wall_clock_min": 240
+    },
+    "human_checkpoints": [
+      "after_feature_1_plan",
+      "after_feature_2_delivery",
+      "after_feature_3_delivery",
+      "after_feature_4_delivery"
+    ],
+    "max_iterations": 12,
+    "no_progress": {
+      "action": "human_checkpoint",
+      "max_stalled_iterations": 2,
+      "signals": [
+        "same feature blocked 2 iterations",
+        "test failure pattern repeats",
+        "s\u1ebfp rejected same code twice"
+      ]
+    },
+    "stop_conditions": [
+      "all 4 features delivered and committed",
+      "max_iterations reached",
+      "s\u1ebfp says stop",
+      "budget cap exceeded"
+    ]
+  },
+  "meta": {
+    "author": "longluu",
+    "created": "2026-06-24",
+    "description": "Implement 4 P2 features (RSS, Sitemap, Newsletter, Comments) for personal-blog-cms with TDD",
+    "name": "blog-p2-features"
+  },
+  "observability": {
+    "checkpoint_granularity": "gate",
+    "run_log": "~/vibe-code/personal-blog-cms/looper-output/loop-workspace/run-log.md",
+    "state_file": "~/vibe-code/personal-blog-cms/looper-output/loop-workspace/state.json"
+  },
+  "privacy": {
+    "egress": [
+      {
+        "consent": "required",
+        "redact": [
+          ".env",
+          "secrets/**",
+          "**/*.key",
+          "**/application*.yml"
+        ],
+        "sends": [
+          "plan",
+          "deliveries"
+        ],
+        "to": "human-reviewer"
+      }
+    ]
+  },
+  "source": "/home/halo/vibe-code/personal-blog-cms/looper-output/loop.yaml",
+  "version": 1,
+  "workspace": {
+    "dir": "~/vibe-code/personal-blog-cms/looper-output",
+    "layout": [
+      "loop.yaml",
+      "loop.resolved.json",
+      "LOOP.md",
+      "RUN_IN_SESSION.md",
+      "run-loop.py",
+      "README.md",
+      "loop-workspace/",
+      "~/vibe-code/personal-blog-cms/looper-output/loop-workspace/state.json",
+      "~/vibe-code/personal-blog-cms/looper-output/loop-workspace/run-log.md"
+    ]
+  }
+}
