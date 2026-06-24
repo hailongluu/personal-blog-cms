@@ -2,7 +2,7 @@
 -- Uses 'simple' config for multi-language support (Vietnamese + English)
 -- Trigger-based approach: auto-updates search_vector on INSERT/UPDATE
 
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS search_vector tsvector;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS search_vector TEXT;
 
 -- Populate existing rows
 UPDATE posts SET search_vector =
