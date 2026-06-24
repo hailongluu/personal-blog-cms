@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ArrowLeft, Clock, Eye, Calendar } from 'lucide-react';
 import { getPostBySlug } from '@/lib/publicApi';
+import { parseCustomBlocks, CustomBlock } from '@/components/CustomBlockRenderer';
 import type { Post } from '@/types';
 
 export default function BlogDetailPage() {
@@ -122,9 +123,17 @@ export default function BlogDetailPage() {
 
         {/* Content */}
         <div className="prose prose-stone prose-lg max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {post.contentMarkdown?.replace(/^# .+\n\n?/, '') || ''}
-          </ReactMarkdown>
+          {(() => {
+            const markdown = post.contentMarkdown?.replace(/^# .+\n\n?/, '') || '';
+            const blocks = parseCustomBlocks(markdown);
+            if (blocks.length === 0) return null;
+            return blocks.map((block, idx) => {
+              if (block.type === 'markdown') {
+                return <ReactMarkdown key={idx} remarkPlugins={[remarkGfm]}>{block.content}</ReactMarkdown>;
+              }
+              return <CustomBlock key={idx} type={block.type} content={block.content} meta={block.meta} />;
+            });
+          })()}
         </div>
 
         {/* Tags */}

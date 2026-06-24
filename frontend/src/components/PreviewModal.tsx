@@ -1,6 +1,7 @@
 import { X, Clock, User, Tag as TagIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { parseCustomBlocks, CustomBlock } from '@/components/CustomBlockRenderer';
 import type { Post } from '@/types';
 
 interface Props {
@@ -85,9 +86,16 @@ export default function PreviewModal({ post, onClose }: Props) {
 
           {/* Body */}
           <div className="prose prose-lg max-w-none prose-headings:text-text prose-a:text-primary prose-img:rounded-lg">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {post.contentMarkdown || '*No content*'}
-            </ReactMarkdown>
+            {(() => {
+              const blocks = parseCustomBlocks(post.contentMarkdown || '*No content*');
+              if (blocks.length === 0) return <p className="text-text-muted italic">No content</p>;
+              return blocks.map((block, idx) => {
+                if (block.type === 'markdown') {
+                  return <ReactMarkdown key={idx} remarkPlugins={[remarkGfm]}>{block.content}</ReactMarkdown>;
+                }
+                return <CustomBlock key={idx} type={block.type} content={block.content} meta={block.meta} />;
+              });
+            })()}
           </div>
         </div>
       </div>
