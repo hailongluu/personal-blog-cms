@@ -1,25 +1,73 @@
 {
   "loop": "blog-p2-features",
   "started_at": "2026-06-24T19:12:00Z",
-  "current_feature": 1,
-  "current_iteration": 1,
+  "completed_at": "2026-06-24T19:42:30Z",
   "max_iterations": 12,
+  "iterations_used": 1,
   "features": [
     {
       "id": 1,
       "name": "rss-feed",
       "status": "delivered",
-      "plan": "Created RssFeedController at /api/public/feed.xml using Atom 1.0 format",
-      "delivery": "GET /api/public/feed.xml returns valid XML with 20 entries. 4 new unit tests pass. Full suite: 77/77.",
-      "review": "pending sếp approval",
+      "plan": "RssFeedController at /api/public/feed.xml (Atom 1.0)",
+      "delivery": "Atom 1.0 XML, 20 entries, 17.4KB. 4 tests pass.",
+      "review": "approved",
+      "commit": "bd57480",
       "verification": {
         "backend_tests_pass": "77/77",
-        "rss_endpoint_valid": "✅ valid Atom 1.0 XML, 20 entries, 17.4KB"
+        "rss_endpoint_valid": "Atom 1.0 XML, 20 entries"
       }
     },
-    {"id": 2, "name": "sitemap-xml", "status": "pending", "plan": null, "delivery": null, "review": null},
-    {"id": 3, "name": "newsletter-send", "status": "pending", "plan": null, "delivery": null, "review": null},
-    {"id": 4, "name": "comments-system", "status": "pending", "plan": null, "delivery": null, "review": null}
+    {
+      "id": 2,
+      "name": "sitemap-xml",
+      "status": "delivered",
+      "plan": "SitemapController at /api/public/sitemap.xml + /api/public/robots.txt",
+      "delivery": "40 URLs (27 posts + 4 topics + 4 projects + 5 static). 5 tests pass.",
+      "review": "auto-approved per sếp instruction 'làm toàn bộ chức năng còn lại luôn'",
+      "commit": "16934e1",
+      "verification": {
+        "backend_tests_pass": "82/82",
+        "sitemap_valid_xml": "40 URLs, valid urlset structure",
+        "robots_txt_correct": "User-agent: *, Disallow /admin, Sitemap reference"
+      }
+    },
+    {
+      "id": 3,
+      "name": "newsletter-send",
+      "status": "delivered",
+      "plan": "POST /api/admin/newsletter/send + /preview with audit log + email sender abstraction",
+      "delivery": "NewsletterService (7 tests) + AdminController (3 tests). V7 migration creates newsletter_send_log table.",
+      "review": "auto-approved per sếp instruction",
+      "commit": "b494da7",
+      "verification": {
+        "backend_tests_pass": "92/92",
+        "moderation_statuses_validated": "approved/rejected/spam/deleted",
+        "v7_migration_applied": "newsletter_send_log table exists"
+      }
+    },
+    {
+      "id": 4,
+      "name": "comments-system",
+      "status": "delivered",
+      "plan": "Nested comments + moderation queue + 5-min author edit + soft delete",
+      "delivery": "CommentService (14 tests) + PublicController (4 tests) + AdminController (4 tests). V8 migration. INET column handled via Hibernate @JdbcTypeCode(SqlTypes.INET).",
+      "review": "auto-approved per sếp instruction",
+      "commit": "f76fa74",
+      "verification": {
+        "backend_tests_pass": "114/114",
+        "v8_migration_applied": "comments table with 4 indexes",
+        "live_create_verified": "POST /api/public/comments → DB row, status=pending",
+        "live_author_edit_verified": "PUT /api/public/comments/1 → content updated"
+      }
+    }
   ],
-  "stop_reason": null
+  "summary": {
+    "total_features": 4,
+    "delivered": 4,
+    "skipped_or_failed": 0,
+    "total_tests_added": 31,
+    "total_tests_overall": 114
+  },
+  "stop_reason": "all_features_delivered"
 }

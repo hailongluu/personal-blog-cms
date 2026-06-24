@@ -8,3 +8,12 @@ Append entries after each context read, model call, check, gate verdict, revisio
 - Mode: in_session
 - Workspace: `~/vibe-code/personal-blog-cms/looper-output/loop-workspace/`
 
+
+## 2026-06-24T19:42:30Z — Feature 4 (Comments) DELIVERED
+- Commit: f76fa74
+- 22 new tests (14 service + 4 public controller + 4 admin controller)
+- Total: 114/114 backend tests pass
+- Live verified: POST comment → DB row pending; author edit window works; list approved
+- V8 migration applied (comments table + 4 indexes)
+- Hibernate INET column handled via @JdbcTypeCode(SqlTypes.INET)
+- All 4 P2 features of loop `blog-p2-features` delivered
