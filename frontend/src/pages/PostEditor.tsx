@@ -4,7 +4,8 @@ import remarkGfm from 'remark-gfm';
 import { postsApi } from '@/lib/data';
 import type { Post, Topic, Tag, PostType } from '@/types';
 import { POST_TYPES } from '@/types';
-import { ArrowLeft, Eye, Edit3 } from 'lucide-react';
+import { ArrowLeft, Eye, Edit3, ExternalLink } from 'lucide-react';
+import PreviewModal from '@/components/PreviewModal';
 
 interface Props {
   post: Post | null;
@@ -26,6 +27,8 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
   const [topicId, setTopicId] = useState<number | undefined>(post?.topic?.id);
   const [selectedTags, setSelectedTags] = useState<number[]>(post?.tags?.map(t => t.id) || []);
   const [preview, setPreview] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewPost, setPreviewPost] = useState<Post | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,6 +65,45 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
 
   function toggleTag(id: number) {
     setSelectedTags(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
+  }
+
+  async function handlePreview() {
+    if (post?.id) {
+      // Existing post: fetch from backend (includes draft/unsaved content)
+      try {
+        const fetched = await postsApi.preview(post.id);
+        setPreviewPost(fetched);
+      } catch {
+        // Fallback: build from form data
+        setPreviewPost(buildPreviewFromForm());
+      }
+    } else {
+      // New post: build from form data
+      setPreviewPost(buildPreviewFromForm());
+    }
+    setShowPreviewModal(true);
+  }
+
+  function buildPreviewFromForm(): Post {
+    const selectedTopic = topics.find(t => t.id === topicId);
+    const selectedTagObjs = tags.filter(t => selectedTags.includes(t.id));
+    return {
+      id: 0,
+      title,
+      slug,
+      subtitle,
+      contentMarkdown,
+      excerpt,
+      type,
+      status,
+      featured,
+      topic: selectedTopic || undefined,
+      tags: selectedTagObjs,
+      readingTimeMin: Math.max(1, Math.ceil(contentMarkdown.split(/\s+/).length / 200)),
+      viewCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as Post;
   }
 
   return (
@@ -173,9 +215,20 @@ export default function PostEditor({ post, topics, tags, onSave, onCancel }: Pro
           <button type="submit" disabled={saving} className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium disabled:opacity-50">
             {saving ? 'Saving...' : post ? 'Update Post' : 'Create Post'}
           </button>
+          <button type="button" onClick={handlePreview}
+            className="flex items-center gap-1.5 px-4 py-2 border border-primary/30 text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
+          >
+            <ExternalLink size={15} />
+            Preview
+          </button>
           <button type="button" onClick={onCancel} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-bg transition-colors">Cancel</button>
         </div>
       </form>
+
+      {/* Preview Modal */}
+      {showPreviewModal && (
+        <PreviewModal post={previewPost} onClose={() => setShowPreviewModal(false)} />
+      )}
     </div>
   );
 }

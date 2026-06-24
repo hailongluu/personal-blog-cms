@@ -20,6 +20,8 @@ export const postsApi = {
     api.post<{ data: Post }>(`/admin/posts/${id}/archive`).then(r => r.data.data),
   duplicate: (id: number) =>
     api.post<{ data: Post }>(`/admin/posts/${id}/duplicate`).then(r => r.data.data),
+  preview: (id: number) =>
+    api.get<{ data: Post }>(`/admin/posts/${id}/preview`).then(r => r.data.data),
 };
 
 // ─── Topics ───────────────────────────────────────────────
