@@ -39,6 +39,18 @@ public class Media {
     @Column(name = "public_url", nullable = false, columnDefinition = "TEXT")
     private String publicUrl;
 
+    @Column(name = "thumbnail_path", columnDefinition = "TEXT")
+    private String thumbnailPath;
+
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
+    private String thumbnailUrl;
+
+    @Column(name = "webp_path", columnDefinition = "TEXT")
+    private String webpPath;
+
+    @Column(name = "webp_url", columnDefinition = "TEXT")
+    private String webpUrl;
+
     @Column(name = "alt_text", columnDefinition = "TEXT")
     private String altText;
 

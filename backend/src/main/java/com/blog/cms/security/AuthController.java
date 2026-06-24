@@ -3,12 +3,15 @@ package com.blog.cms.security;
 import com.blog.cms.config.BlogProperties;
 import com.blog.cms.security.dto.AuthResponse;
 import com.blog.cms.security.dto.ChangePasswordRequest;
+import com.blog.cms.security.dto.ForgotPasswordRequest;
 import com.blog.cms.security.dto.LoginRequest;
 import com.blog.cms.security.dto.RefreshRequest;
+import com.blog.cms.security.dto.ResetPasswordRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +29,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -169,6 +173,54 @@ public class AuthController {
 
         Map<String, Object> body = new java.util.LinkedHashMap<>();
         body.put("data", Map.of("message", "Password changed. Please log in again."));
+        body.put("error", null);
+        body.put("meta", Map.of("timestamp", Instant.now().toString()));
+        return ResponseEntity.ok(body);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // Forgot / Reset password — SPEC §7
+    // ═════════════════════════════════════════════════════════════════
+
+    /**
+     * POST /api/admin/auth/forgot-password — request a password reset token.
+     *
+     * <p>Always returns 200 (with a generic message) to prevent user enumeration.
+     * If the email exists, a token is generated, persisted (hashed), and
+     * logged to console in dev mode. In production, an email would be sent.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        String token = authService.requestPasswordReset(req.email());
+
+        // SECURITY: log token to console in dev mode (for testing).
+        // In production this should be replaced by email sending (SMTP/SES).
+        // We do NOT return the token in the response body.
+        if (token != null) {
+            log.warn("[DEV ONLY] Password reset token for {}: {}", req.email(), token);
+        }
+
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("data", Map.of(
+                "message", "If that email exists, a password reset link has been sent."
+        ));
+        body.put("error", null);
+        body.put("meta", Map.of("timestamp", Instant.now().toString()));
+        return ResponseEntity.ok(body);
+    }
+
+    /**
+     * POST /api/admin/auth/reset-password — set new password using reset token.
+     * Body: { token, newPassword }
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        authService.resetPassword(req.token(), req.newPassword());
+
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("data", Map.of(
+                "message", "Password reset successfully. Please log in with your new password."
+        ));
         body.put("error", null);
         body.put("meta", Map.of("timestamp", Instant.now().toString()));
         return ResponseEntity.ok(body);

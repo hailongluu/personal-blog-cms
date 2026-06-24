@@ -68,7 +68,9 @@ public class CsrfTokenFilter extends OncePerRequestFilter {
         // Skip CSRF for public API endpoints (newsletter signup, etc.)
         String path = request.getRequestURI();
         boolean isAuthEndpoint = path.startsWith("/api/admin/auth/login")
-                || path.startsWith("/api/admin/auth/refresh");
+                || path.startsWith("/api/admin/auth/refresh")
+                || path.startsWith("/api/admin/auth/forgot-password")
+                || path.startsWith("/api/admin/auth/reset-password");
         boolean isPublicEndpoint = path.startsWith("/api/public/");
 
         if (isAuthEndpoint || isPublicEndpoint) {

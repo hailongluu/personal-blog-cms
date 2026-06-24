@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import AdminLayout from '@/layouts/AdminLayout';
 import PublicLayout from '@/layouts/PublicLayout';
 import LoginPage from '@/pages/LoginPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import DashboardPage from '@/pages/DashboardPage';
 import PostsPage from '@/pages/PostsPage';
 import TopicsPage from '@/pages/TopicsPage';
@@ -57,6 +59,8 @@ export default function App() {
 
             {/* Login page */}
             <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+            <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+            <Route path="/reset-password" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
 
             {/* Admin routes (auth required) */}
             <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

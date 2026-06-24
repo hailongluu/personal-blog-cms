@@ -78,7 +78,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/admin/auth/login",
                                 "/api/admin/auth/refresh",
-                                "/api/admin/auth/csrf"
+                                "/api/admin/auth/csrf",
+                                "/api/admin/auth/forgot-password",
+                                "/api/admin/auth/reset-password"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").authenticated()
                         .anyRequest().authenticated()

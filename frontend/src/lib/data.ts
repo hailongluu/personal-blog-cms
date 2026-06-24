@@ -99,4 +99,14 @@ export const authApi = {
       currentPassword,
       newPassword,
     }).then(r => r.data.data),
+
+  forgotPassword: (email: string) =>
+    api.post<{ data: { message: string } }>('/admin/auth/forgot-password', { email })
+      .then(r => r.data.data),
+
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<{ data: { message: string } }>('/admin/auth/reset-password', {
+      token,
+      newPassword,
+    }).then(r => r.data.data),
 };

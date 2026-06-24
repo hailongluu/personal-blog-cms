@@ -2,6 +2,7 @@ package com.blog.cms.security;
 
 import com.blog.cms.security.dto.AuthResponse;
 import com.blog.cms.security.dto.LoginRequest;
+import com.blog.cms.user.PasswordResetTokenRepository;
 import com.blog.cms.user.Role;
 import com.blog.cms.user.RoleRepository;
 import com.blog.cms.user.SessionRepository;
@@ -30,6 +31,7 @@ class AuthServiceTest {
     @Autowired private UserRepository userRepository;
     @Autowired private RoleRepository roleRepository;
     @Autowired private SessionRepository sessionRepository;
+    @Autowired private PasswordResetTokenRepository passwordResetTokenRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtService jwtService;
 
@@ -37,6 +39,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
+        passwordResetTokenRepository.deleteAll();
         sessionRepository.deleteAll();
         userRepository.findAll().forEach(u -> {
             if (!"admin@example.com".equals(u.getEmail())) {
@@ -186,5 +189,78 @@ class AuthServiceTest {
     void changePassword_sameAsCurrent_throws() {
         assertThrows(IllegalArgumentException.class,
                 () -> authService.changePassword(testUser.getId(), "password123", "password123"));
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // Forgot Password / Reset Password — SPEC §7
+    // ═════════════════════════════════════════════════════════════════
+
+    @Test
+    void forgotPassword_unknownEmail_doesNotThrow_andReturnsNull() {
+        // Security: do not leak whether email exists
+        // Should silently succeed (return null) for non-existent email
+        String token = authService.requestPasswordReset("ghost@example.com");
+        assertThat(token).isNull();
+    }
+
+    @Test
+    void forgotPassword_existingEmail_returnsToken() {
+        String token = authService.requestPasswordReset("test@example.com");
+        assertThat(token).isNotBlank();
+        assertThat(token.length()).isGreaterThanOrEqualTo(32);
+    }
+
+    @Test
+    void forgotPassword_invalidEmail_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.requestPasswordReset("not-an-email"));
+    }
+
+    @Test
+    void resetPassword_validToken_changesPassword_andRevokesSessions() {
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        AuthService.LoginResult r1 = authService.login(req, "Agent", "1.1.1.1");
+
+        String token = authService.requestPasswordReset("test@example.com");
+        assertThat(token).isNotBlank();
+
+        authService.resetPassword(token, "newResetPwd!");
+
+        // Old session should be revoked
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.refresh(r1.refreshToken()));
+
+        // Login with new password must succeed
+        LoginRequest newReq = new LoginRequest("test@example.com", "newResetPwd!");
+        AuthService.LoginResult r2 = authService.login(newReq, "Agent", "2.2.2.2");
+        assertThat(r2.accessToken()).isNotBlank();
+    }
+
+    @Test
+    void resetPassword_invalidToken_throws() {
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.resetPassword("bogus-token-value", "anyNewPwd1"));
+    }
+
+    @Test
+    void resetPassword_tooShort_throws_andKeepsOldPassword() {
+        String token = authService.requestPasswordReset("test@example.com");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.resetPassword(token, "short"));
+
+        // Old password must still work
+        LoginRequest req = new LoginRequest("test@example.com", "password123");
+        AuthService.LoginResult result = authService.login(req, "Agent", "1.1.1.1");
+        assertThat(result.accessToken()).isNotBlank();
+    }
+
+    @Test
+    void resetPassword_tokenCanBeUsedOnlyOnce() {
+        String token = authService.requestPasswordReset("test@example.com");
+        authService.resetPassword(token, "firstNewPwd1");
+
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.resetPassword(token, "secondNewPwd1"));
     }
 }

@@ -38,6 +38,7 @@ public class MediaService {
 
     private final MediaRepository mediaRepository;
     private final UserRepository userRepository;
+    private final ImageVariantService imageVariantService;
 
     @Value("${blog.upload.dir:/data/uploads}")
     private String uploadDir;
@@ -80,6 +81,7 @@ public class MediaService {
         String uuid = UUID.randomUUID().toString();
         String filename = uuid + ext;
         String relativePath = yearMonth + "/" + filename;
+        String thumbnailPath = null, webpPath = null;
 
         try {
             Path targetDir = Path.of(uploadDir, yearMonth);
@@ -87,6 +89,14 @@ public class MediaService {
             Path targetFile = targetDir.resolve(filename);
             file.transferTo(targetFile.toFile());
             log.info("File saved: {}", targetFile);
+
+            // Generate image variants (thumbnail + WebP)
+            String baseName = uuid; // filename without extension
+            if (isImage(mimeType)) {
+                ImageVariantService.VariantResult variants = imageVariantService.generateVariants(targetFile, yearMonth, baseName);
+                thumbnailPath = variants.thumbnailPath();
+                webpPath = variants.webpPath();
+            }
         } catch (IOException e) {
             log.error("Failed to save file", e);
             throw new RuntimeException("Failed to store file", e);
@@ -100,6 +110,10 @@ public class MediaService {
             .sizeBytes(file.getSize())
             .storagePath(relativePath)
             .publicUrl("/uploads/" + relativePath)
+            .thumbnailPath(thumbnailPath)
+            .thumbnailUrl(thumbnailPath != null ? "/uploads/" + thumbnailPath : null)
+            .webpPath(webpPath)
+            .webpUrl(webpPath != null ? "/uploads/" + webpPath : null)
             .uploadedBy(uploader)
             .build();
 
@@ -130,5 +144,9 @@ public class MediaService {
         if (filename == null) return "";
         int dot = filename.lastIndexOf('.');
         return dot >= 0 ? filename.substring(dot) : "";
+    }
+
+    private boolean isImage(String mimeType) {
+        return mimeType != null && mimeType.startsWith("image/");
     }
 }

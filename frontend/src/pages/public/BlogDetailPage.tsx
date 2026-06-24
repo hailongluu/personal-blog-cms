@@ -123,7 +123,7 @@ export default function BlogDetailPage() {
         {/* Content */}
         <div className="prose prose-stone prose-lg max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {post.contentMarkdown}
+            {post.contentMarkdown?.replace(/^# .+\n\n?/, '') || ''}
           </ReactMarkdown>
         </div>
 

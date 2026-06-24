@@ -36,6 +36,7 @@ class MediaServiceTest {
 
     @Mock private MediaRepository mediaRepository;
     @Mock private UserRepository userRepository;
+    @Mock private ImageVariantService imageVariantService;
     @InjectMocks private MediaService mediaService;
 
     private User uploader;
@@ -98,5 +99,41 @@ class MediaServiceTest {
 
         assertThat(result.getError()).isNull();
         assertThat(media.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("should generate image variants on upload")
+    void shouldGenerateVariantsOnUpload() {
+        byte[] imageBytes = new byte[100]; // minimal image bytes
+        MultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", imageBytes);
+
+        when(userRepository.findByEmailWithRole("admin@example.com")).thenReturn(Optional.of(uploader));
+        when(mediaRepository.save(any(Media.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ImageVariantService.VariantResult variants = new ImageVariantService.VariantResult(
+            "2026/06/thumb_abc.jpg", "2026/06/abc.webp"
+        );
+        when(imageVariantService.generateVariants(any(), eq("2026/06"), anyString())).thenReturn(variants);
+
+        ApiResponse<MediaResponse> result = mediaService.upload(file, "admin@example.com");
+
+        assertThat(result.getData().getThumbnailUrl()).isEqualTo("/uploads/2026/06/thumb_abc.jpg");
+        assertThat(result.getData().getWebpUrl()).isEqualTo("/uploads/2026/06/abc.webp");
+        verify(imageVariantService).generateVariants(any(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("should skip variant generation for non-image files")
+    void shouldSkipVariantsForNonImage() {
+        MultipartFile file = new MockMultipartFile("file", "doc.pdf", "application/pdf", new byte[100]);
+
+        when(userRepository.findByEmailWithRole("admin@example.com")).thenReturn(Optional.of(uploader));
+        when(mediaRepository.save(any(Media.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ApiResponse<MediaResponse> result = mediaService.upload(file, "admin@example.com");
+
+        assertThat(result.getData().getThumbnailUrl()).isNull();
+        assertThat(result.getData().getWebpUrl()).isNull();
+        verify(imageVariantService, never()).generateVariants(any(), anyString(), anyString());
     }
 }

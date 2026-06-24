@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -68,6 +68,15 @@ export default function LoginPage() {
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          <div className="text-center text-sm">
+            <Link
+              to="/forgot-password"
+              className="text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              Quên mật khẩu?
+            </Link>
+          </div>
         </form>
       </div>
     </div>

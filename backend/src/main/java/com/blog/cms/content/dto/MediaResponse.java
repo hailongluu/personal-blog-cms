@@ -17,6 +17,8 @@ public class MediaResponse {
     private Integer width;
     private Integer height;
     private String publicUrl;
+    private String thumbnailUrl;
+    private String webpUrl;
     private String altText;
     private String caption;
     private Instant createdAt;
@@ -31,6 +33,8 @@ public class MediaResponse {
             .width(m.getWidth())
             .height(m.getHeight())
             .publicUrl(m.getPublicUrl())
+            .thumbnailUrl(m.getThumbnailPath() != null ? "/uploads/" + m.getThumbnailPath() : null)
+            .webpUrl(m.getWebpPath() != null ? "/uploads/" + m.getWebpPath() : null)
             .altText(m.getAltText())
             .caption(m.getCaption())
             .createdAt(m.getCreatedAt())
