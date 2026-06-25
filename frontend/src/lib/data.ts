@@ -112,3 +112,127 @@ export const authApi = {
       newPassword,
     }).then(r => r.data.data),
 };
+
+// ─── Scheduled Tasks (admin) ─────────────────────────────
+export interface CronJob {
+  id: string;
+  name: string;
+  schedule: string;
+  state: string;
+  nextRun?: string | null;
+  lastRun?: string | null;
+  lastStatus?: string | null;
+  deliver?: string;
+  script?: string;
+  mode?: string;
+}
+
+export interface ContentRegistryItem {
+  id: number;
+  slug: string;
+  source: string;
+  sourceUrl?: string;
+  topic?: string;
+  pillar?: string;
+  funnel?: string;
+  status: string;
+  postId?: number | null;
+  publishedAt?: string;
+  createdAt?: string;
+}
+
+export interface ContentRegistryPage {
+  items: ContentRegistryItem[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface ScheduledPostItem {
+  id: number;
+  title: string;
+  slug: string;
+  status: string;
+  scheduledAt?: string | null;
+  timeUntilPublish?: string;
+  authorId?: number | null;
+}
+
+export interface NewsletterLogItem {
+  id: number;
+  subject: string;
+  recipientCount: number;
+  successCount: number;
+  failureCount: number;
+  sentBy?: number | null;
+  sentAt: string;
+  deliveryStatus: string;
+}
+
+export interface ScheduledTasksAggregate {
+  cronJobs: CronJob[];
+  cronJobsError?: string | null;
+  contentRegistryCollectedCount: number;
+  contentRegistryPublishedCount: number;
+  scheduledPosts: ScheduledPostItem[];
+  newsletterLog: NewsletterLogItem[];
+}
+
+export const scheduledTasksApi = {
+  // Aggregate view (one call returns all 4 sections)
+  aggregate: () =>
+    api.get<{ data: ScheduledTasksAggregate }>('/admin/scheduled-tasks').then(r => r.data.data),
+
+  // 1. Cron jobs
+  listCron: () =>
+    api.get<{ data: CronJob[] }>('/admin/scheduled-tasks/cron').then(r => r.data.data),
+  runCron: (jobId: string) =>
+    api.post<{ data: string }>(`/admin/scheduled-tasks/cron/${jobId}/run`).then(r => r.data.data),
+  pauseCron: (jobId: string) =>
+    api.post<{ data: string }>(`/admin/scheduled-tasks/cron/${jobId}/pause`).then(r => r.data.data),
+  resumeCron: (jobId: string) =>
+    api.post<{ data: string }>(`/admin/scheduled-tasks/cron/${jobId}/resume`).then(r => r.data.data),
+  deleteCron: (jobId: string) =>
+    api.delete<{ data: string }>(`/admin/scheduled-tasks/cron/${jobId}`).then(r => r.data.data),
+
+  // 2. Content registry
+  listContentRegistry: (params: {
+    page?: number; size?: number; source?: string; pillar?: string; funnel?: string; status?: string;
+  } = {}) => {
+    const q: Record<string, string | number> = {};
+    if (params.page !== undefined) q.page = params.page;
+    if (params.size !== undefined) q.size = params.size;
+    if (params.source) q.source = params.source;
+    if (params.pillar) q.pillar = params.pillar;
+    if (params.funnel) q.funnel = params.funnel;
+    if (params.status) q.status = params.status;
+    return api.get<{ data: ContentRegistryPage }>('/admin/scheduled-tasks/content-registry', { params: q })
+      .then(r => r.data.data);
+  },
+  rejectContentRegistry: (id: number) =>
+    api.post<{ data: null }>(`/admin/scheduled-tasks/content-registry/${id}/reject`).then(r => r.data.data),
+  deleteContentRegistry: (id: number) =>
+    api.delete<{ data: null }>(`/admin/scheduled-tasks/content-registry/${id}`).then(r => r.data.data),
+
+  // 3. Scheduled posts
+  listScheduledPosts: () =>
+    api.get<{ data: ScheduledPostItem[] }>('/admin/scheduled-tasks/posts/scheduled').then(r => r.data.data),
+  publishPostNow: (id: number) =>
+    api.post<{ data: { id: number; status: string } }>(`/admin/scheduled-tasks/posts/${id}/publish-now`)
+      .then(r => r.data.data),
+  reschedulePost: (id: number, scheduledAt: string) =>
+    api.post<{ data: ScheduledPostItem }>(`/admin/scheduled-tasks/posts/${id}/reschedule`, { scheduledAt })
+      .then(r => r.data.data),
+  cancelScheduledPost: (id: number) =>
+    api.post<{ data: ScheduledPostItem }>(`/admin/scheduled-tasks/posts/${id}/cancel-schedule`)
+      .then(r => r.data.data),
+
+  // 4. Newsletter log
+  listNewsletterLog: () =>
+    api.get<{ data: NewsletterLogItem[] }>('/admin/scheduled-tasks/newsletter').then(r => r.data.data),
+  resendNewsletter: (id: number) =>
+    api.post<{ data: null }>(`/admin/scheduled-tasks/newsletter/${id}/resend`).then(r => r.data.data),
+  deleteNewsletterLog: (id: number) =>
+    api.delete<{ data: null }>(`/admin/scheduled-tasks/newsletter/${id}`).then(r => r.data.data),
+};

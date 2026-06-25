@@ -12,6 +12,7 @@ import TopicsPage from '@/pages/TopicsPage';
 import TagsPage from '@/pages/TagsPage';
 import ProjectsPage from '@/pages/ProjectsPage';
 import MediaPage from '@/pages/MediaPage';
+import ScheduledTasksPage from '@/pages/ScheduledTasksPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import HomePage from '@/pages/public/HomePage';
@@ -70,6 +71,7 @@ export default function App() {
               <Route path="tags" element={<TagsPage />} />
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="media" element={<MediaPage />} />
+              <Route path="scheduled-tasks" element={<ScheduledTasksPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>

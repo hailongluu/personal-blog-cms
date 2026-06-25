@@ -126,6 +126,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         """)
     List<Post> findPendingDrafts(Pageable pageable);
 
+    @Query("""
+        SELECT p FROM Post p
+        WHERE p.deletedAt IS NULL
+        AND p.status = :status
+        AND p.scheduledAt IS NOT NULL
+        ORDER BY p.scheduledAt ASC
+        """)
+    Page<Post> findByStatusAndScheduledAtNotNull(@Param("status") String status, Pageable pageable);
+
     // ───────────────────────────────────────────────────────────
     // Public API queries — only PUBLISHED + visibility=public + not deleted
     // ───────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  LayoutDashboard, FileText, FolderTree, Tags, Briefcase, Image, Settings, User, LogOut, Menu, X
+  LayoutDashboard, FileText, FolderTree, Tags, Briefcase, Image, Settings, User, LogOut, Menu, X, Clock
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ const navItems = [
   { to: '/admin/tags', icon: Tags, label: 'Tags' },
   { to: '/admin/projects', icon: Briefcase, label: 'Projects' },
   { to: '/admin/media', icon: Image, label: 'Media' },
+  { to: '/admin/scheduled-tasks', icon: Clock, label: 'Scheduled Tasks' },
   { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
