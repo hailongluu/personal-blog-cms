@@ -10,8 +10,6 @@ interface Props {
   onChange: (value: string) => void;
 }
 
-type InsertFn = (before: string, after?: string, placeholder?: string) => void;
-
 export default function MarkdownToolbar({ textareaRef, value, onChange }: Props) {
   const textarea = textareaRef.current;
 
@@ -26,7 +24,6 @@ export default function MarkdownToolbar({ textareaRef, value, onChange }: Props)
     // Restore cursor position after state update
     requestAnimationFrame(() => {
       if (textarea) {
-        const cursor = start + before.length + text.length + (after ? 0 : 0);
         textarea.focus();
         textarea.setSelectionRange(start + before.length, start + before.length + text.length);
       }

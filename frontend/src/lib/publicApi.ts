@@ -1,10 +1,16 @@
 import axios from 'axios';
-import type { Post, Topic, Project, PagedResponse, ApiResponse } from '@/types';
+import type { Post, Topic, Project, PagedResponse, ApiResponse, Settings } from '@/types';
 
 const publicApi = axios.create({
   baseURL: '/api/public',
   headers: { 'Content-Type': 'application/json' },
 });
+
+// ─── Settings (public) ─────────────────────────────────────
+export async function getPublicSettings(): Promise<Settings> {
+  const res = await publicApi.get<ApiResponse<Settings>>('/settings');
+  return res.data.data || {};
+}
 
 // ─── Posts ────────────────────────────────────────────────
 export async function getPublishedPosts(page = 1, pageSize = 10, topicSlug?: string) {

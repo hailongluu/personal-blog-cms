@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Menu, X, Rss, ExternalLink, GitFork } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { loadAndInjectTracking } from '@/lib/tracking';
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -13,6 +14,14 @@ const navLinks = [
 
 export default function PublicLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Inject tracking scripts (GA4/GTM/FB/TikTok + custom) on mount.
+  // loadAndInjectTracking() is a no-op if no settings exist.
+  useEffect(() => {
+    loadAndInjectTracking().catch(err => {
+      console.warn('Tracking injection failed:', err);
+    });
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900">

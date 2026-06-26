@@ -98,6 +98,20 @@ export interface Settings {
   "social.x"?: string;
   "social.youtube"?: string;
   "site.email"?: string;
+  // ── Tracking scripts ─────────────────────────────────────
+  "tracking.ga4_measurement_id"?: string;
+  "tracking.gtm_container_id"?: string;
+  "tracking.fb_pixel_id"?: string;
+  "tracking.tiktok_pixel_id"?: string;
+  "tracking.gtag_enabled"?: boolean;
+  "tracking.fb_enabled"?: boolean;
+  "tracking.tiktok_enabled"?: boolean;
+  "tracking.consent_mode"?: "none" | "basic" | "full" | string;
+  // ── Custom scripts/CSS ───────────────────────────────────
+  "custom.head_scripts"?: string;
+  "custom.body_start_scripts"?: string;
+  "custom.body_end_scripts"?: string;
+  "custom.css"?: string;
 }
 
 export interface ApiResponse<T> {
