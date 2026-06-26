@@ -1,6 +1,9 @@
 package com.blog.cms.content.dto;
 
+import com.blog.cms.content.JsonLdGenerator;
 import com.blog.cms.content.Post;
+import com.blog.cms.content.Tag;
+import com.blog.cms.content.Topic;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,6 +40,7 @@ public class PostResponse {
     private String canonicalUrl;
     private Instant createdAt;
     private Instant updatedAt;
+    private String jsonLd; // Auto-generated Schema.org BlogPosting JSON-LD
 
     @Data @Builder @AllArgsConstructor
     public static class AuthorDto {
@@ -102,6 +106,7 @@ public class PostResponse {
             .canonicalUrl(post.getCanonicalUrl())
             .createdAt(post.getCreatedAt())
             .updatedAt(post.getUpdatedAt())
+            .jsonLd(JsonLdGenerator.forBlogPost(post))
             .build();
     }
 }

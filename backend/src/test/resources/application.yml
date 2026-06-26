@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=USER
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=USER,KEY,VALUE,DESCRIPTION
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -11,8 +11,16 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         globally_quoted_identifiers: false
+    # Skip entities that use Postgres-only types (CITEXT, TEXT[]) — they'll be
+    # defined by V900__h2_test_schema.sql below.
+    defer-datasource-initialization: false
   flyway:
     enabled: false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/migration-h2/V900__h2_test_schema.sql
+      continue-on-error: true  # V900 uses CLOB which Hibernate may have already created
 blog:
   jwt:
     secret: test-secret-test-secret-test-secret-test-secret

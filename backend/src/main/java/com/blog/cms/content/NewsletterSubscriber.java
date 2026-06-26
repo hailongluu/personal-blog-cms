@@ -16,7 +16,7 @@ public class NewsletterSubscriber {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, columnDefinition = "CITEXT")
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false, length = 20)
@@ -34,7 +34,7 @@ public class NewsletterSubscriber {
 
     // ip_address is INET type in Postgres — read-only from entity.
     // Newsletter signup from public API doesn't provide IP; column left for future use.
-    @Column(name = "ip_address", columnDefinition = "INET", insertable = false, updatable = false)
+    @Column(name = "ip_address", length = 45, insertable = false, updatable = false)
     private String ipAddress;
 
     @CreationTimestamp

@@ -41,7 +41,8 @@ public class Project {
     @Column(name = "repo_url", columnDefinition = "TEXT")
     private String repoUrl;
 
-    @Column(name = "tech_stack", columnDefinition = "TEXT[]")
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(name = "tech_stack", columnDefinition = "TEXT")
     @Builder.Default
     private List<String> techStack = new ArrayList<>();
 

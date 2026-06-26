@@ -36,7 +36,7 @@ public class Comment {
     @Column(name = "author_name", nullable = false, length = 120)
     private String authorName;
 
-    @Column(name = "author_email", nullable = false, columnDefinition = "CITEXT")
+    @Column(name = "author_email", nullable = false)
     private String authorEmail;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -46,8 +46,7 @@ public class Comment {
     @Builder.Default
     private String status = "pending";
 
-    @JdbcTypeCode(SqlTypes.INET)
-    @Column(name = "ip_address", columnDefinition = "INET")
+    @Column(name = "ip_address", length = 45)
     private String ipAddress;
 
     @Column(name = "user_agent", length = 500)
