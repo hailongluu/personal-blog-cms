@@ -60,7 +60,7 @@ public class SeoController {
             org.springframework.data.domain.PageRequest.of(0, 500));
         for (var post : posts.getContent()) {
             sb.append("  <url>\n");
-            sb.append("    <loc>").append(baseUrl).append("/posts/").append(post.getSlug()).append("</loc>\n");
+            sb.append("    <loc>").append(baseUrl).append("/blog/").append(post.getSlug()).append("</loc>\n");
             if (post.getUpdatedAt() != null) {
                 sb.append("    <lastmod>").append(dateFmt.format(post.getUpdatedAt())).append("</lastmod>\n");
             }
@@ -96,16 +96,20 @@ public class SeoController {
 
     private String resolveBaseUrl(HttpServletRequest request) {
         String configured = blogProperties.getSite().getUrl();
-        if (configured != null && !configured.isBlank() && !"http://localhost:8080".equals(configured)) {
+        // Use configured URL if set and not a localhost default.
+        // Falls back to request-derived URL when running behind a reverse proxy
+        // (Cloudflare, nginx) that sets Host to the public domain.
+        if (configured != null && !configured.isBlank()
+                && !configured.startsWith("http://localhost")
+                && !configured.startsWith("http://127.0.0.1")) {
             return configured.replaceAll("/$", "");
         }
-        // Fallback to request-derived base URL
-        String scheme = request.getScheme();
-        String host = request.getServerName();
-        int port = request.getServerPort();
-        if (("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443)) {
-            return scheme + "://" + host;
-        }
-        return scheme + "://" + host + ":" + port;
+        // Fallback: derive from request (handles Cloudflare + nginx proxy)
+        String scheme = request.getHeader("X-Forwarded-Proto");
+        if (scheme == null || scheme.isBlank()) scheme = request.getScheme();
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null || host.isBlank()) host = request.getServerName();
+        // Behind Cloudflare, port is the standard https port — never include.
+        return scheme + "://" + host;
     }
 }

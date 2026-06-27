@@ -118,9 +118,20 @@ public class SitemapController {
         String body = "User-agent: *\n"
                 + "Allow: /\n"
                 + "Disallow: /admin\n"
+                + "Disallow: /admin/\n"
+                + "Disallow: /login\n"
                 + "Disallow: /api/admin\n"
+                + "Disallow: /api/admin/\n"
+                + "Disallow: /api/auth/\n"
                 + "\n"
-                + "Sitemap: " + base + "/api/public/sitemap.xml\n";
+                // AI crawlers — explicitly allow to maximize discoverability
+                + "User-agent: GPTBot\nAllow: /\n"
+                + "User-agent: ClaudeBot\nAllow: /\n"
+                + "User-agent: PerplexityBot\nAllow: /\n"
+                + "User-agent: Google-Extended\nAllow: /\n"
+                + "\n"
+                + "Sitemap: " + base + "/sitemap.xml\n"
+                + "Sitemap: " + base + "/rss.xml\n";
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_PLAIN)
                 .body(body);

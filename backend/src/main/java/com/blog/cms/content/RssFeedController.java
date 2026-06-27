@@ -1,7 +1,8 @@
 package com.blog.cms.content;
 
-import com.blog.cms.content.dto.PostResponse;
 import com.blog.cms.config.BlogProperties;
+import com.blog.cms.content.dto.PostResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -17,6 +17,10 @@ import java.util.List;
  * Returns Atom 1.0 (XML) — modern, well-supported, includes author + summary.
  *
  * Spec: https://datatracker.ietf.org/doc/html/rfc4287
+ *
+ * Base URL resolution: prefer blogProperties.site.url when it is a
+ * non-localhost value, otherwise fall back to the request-derived URL
+ * (Cloudflare sets Host/X-Forwarded-* headers).
  */
 @RestController
 @RequestMapping("/api/public")
@@ -29,16 +33,16 @@ public class RssFeedController {
     private static final int FEED_LIMIT = 20;
 
     @GetMapping(value = "/feed.xml", produces = MediaType.APPLICATION_ATOM_XML_VALUE)
-    public ResponseEntity<String> getFeed() {
+    public ResponseEntity<String> getFeed(HttpServletRequest request) {
         List<PostResponse> posts = publicPostService.listPublishedPosts(null, null, 1, FEED_LIMIT).getData();
-        String xml = renderAtom(posts);
+        String xml = renderAtom(posts, request);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_ATOM_XML)
                 .body(xml);
     }
 
-    private String renderAtom(List<PostResponse> posts) {
-        String baseUrl = blogProperties.getSite().getUrl();
+    private String renderAtom(List<PostResponse> posts, HttpServletRequest request) {
+        String baseUrl = resolveBaseUrl(request);
         String updated = posts.isEmpty()
                 ? java.time.Instant.now().toString()
                 : posts.get(0).getPublishedAt().toString();
@@ -49,7 +53,7 @@ public class RssFeedController {
         xml.append("  <title>").append(escape(blogProperties.getSite().getTitle())).append("</title>\n");
         xml.append("  <subtitle>").append(escape(blogProperties.getSite().getDescription())).append("</subtitle>\n");
         xml.append("  <link href=\"").append(baseUrl).append("/blog\" rel=\"alternate\"/>\n");
-        xml.append("  <link href=\"").append(baseUrl).append("/api/public/feed.xml\" rel=\"self\"/>\n");
+        xml.append("  <link href=\"").append(baseUrl).append("/rss.xml\" rel=\"self\"/>\n");
         xml.append("  <id>").append(baseUrl).append("/</id>\n");
         xml.append("  <updated>").append(updated).append("</updated>\n");
 
@@ -74,6 +78,27 @@ public class RssFeedController {
 
         xml.append("</feed>\n");
         return xml.toString();
+    }
+
+    /**
+     * Resolve the public base URL. Prefer the configured BLOG_URL when
+     * it points at a real domain (not localhost). Otherwise derive from
+     * the request — works behind Cloudflare + nginx proxy that sets
+     * X-Forwarded-Proto / X-Forwarded-Host / Host headers.
+     */
+    private String resolveBaseUrl(HttpServletRequest request) {
+        String configured = blogProperties.getSite().getUrl();
+        if (configured != null && !configured.isBlank()
+                && !configured.startsWith("http://localhost")
+                && !configured.startsWith("http://127.0.0.1")) {
+            return configured.replaceAll("/$", "");
+        }
+        String scheme = request.getHeader("X-Forwarded-Proto");
+        if (scheme == null || scheme.isBlank()) scheme = request.getScheme();
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null || host.isBlank()) host = request.getServerName();
+        // Behind Cloudflare, port is the standard https port — never include.
+        return scheme + "://" + host;
     }
 
     private static String escape(String s) {

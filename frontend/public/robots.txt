@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/admin/
+Disallow: /login
+Disallow: /api/auth/
+
+# AI crawlers - cho phép để tăng discoverability (optional: chặn nếu muốn)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://news.luuhailong.com/sitemap.xml
+Sitemap: https://news.luuhailong.com/rss.xml
