@@ -48,14 +48,14 @@ public class PostService {
     @Transactional(readOnly = true)
     public ApiResponse<PostResponse> findById(Long id) {
         Post post = postRepository.findByIdWithRelations(id)
-            .orElseThrow(() -> new EntityNotFoundException("Post not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         return ApiResponse.ok(PostResponse.from(post));
     }
 
     @Transactional(readOnly = true)
     public ApiResponse<PostResponse> findBySlug(String slug) {
         Post post = postRepository.findBySlug(slug)
-            .orElseThrow(() -> new EntityNotFoundException("Post not found: " + slug));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         return ApiResponse.ok(PostResponse.from(post));
     }
 
@@ -166,7 +166,7 @@ public class PostService {
     public ApiResponse<PostResponse> update(Long id, UpdatePostRequest req) {
         Post post = postRepository.findById(id)
             .filter(p -> p.getDeletedAt() == null)
-            .orElseThrow(() -> new EntityNotFoundException("Post not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
 
         if (req.getTitle() != null) post.setTitle(req.getTitle());
         if (req.getSubtitle() != null) post.setSubtitle(req.getSubtitle());
@@ -294,7 +294,7 @@ public class PostService {
     public ApiResponse<Void> restore(Long id) {
         Post post = postRepository.findById(id)
             .filter(p -> p.getDeletedAt() != null)
-            .orElseThrow(() -> new EntityNotFoundException("Post not found or not deleted: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         post.setDeletedAt(null);
         postRepository.save(post);
         log.info("Post restored: id={}", id);
@@ -308,7 +308,7 @@ public class PostService {
     private Post mustExist(Long id) {
         return postRepository.findById(id)
             .filter(p -> p.getDeletedAt() == null)
-            .orElseThrow(() -> new EntityNotFoundException("Post not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
     }
 
     private String ensureUniqueSlug(String base) {

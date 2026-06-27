@@ -54,7 +54,7 @@ public class MediaService {
     public ApiResponse<MediaResponse> findById(Long id) {
         Media media = mediaRepository.findById(id)
             .filter(m -> m.getDeletedAt() == null)
-            .orElseThrow(() -> new EntityNotFoundException("Media not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         return ApiResponse.ok(MediaResponse.from(media));
     }
 
@@ -124,7 +124,7 @@ public class MediaService {
 
     public ApiResponse<Void> delete(Long id) {
         Media media = mediaRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Media not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         media.setDeletedAt(Instant.now());
         mediaRepository.save(media);
 

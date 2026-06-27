@@ -29,7 +29,7 @@ public class TagService {
     @Transactional(readOnly = true)
     public ApiResponse<TagResponse> findById(Long id) {
         Tag tag = tagRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Tag not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         return ApiResponse.ok(TagResponse.from(tag));
     }
 
@@ -58,7 +58,7 @@ public class TagService {
 
     public ApiResponse<Void> delete(Long id) {
         if (!tagRepository.existsById(id)) {
-            throw new EntityNotFoundException("Tag not found: " + id);
+            throw new EntityNotFoundException("Resource not found");
         }
         tagRepository.deleteById(id);
         log.info("Tag deleted: id={}", id);

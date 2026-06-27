@@ -31,7 +31,7 @@ public class TopicService {
     @Transactional(readOnly = true)
     public ApiResponse<TopicResponse> findById(Long id) {
         Topic topic = topicRepository.findByIdWithChildren(id)
-            .orElseThrow(() -> new EntityNotFoundException("Topic not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         return ApiResponse.ok(TopicResponse.from(topic, true));
     }
 
@@ -71,7 +71,7 @@ public class TopicService {
     public ApiResponse<TopicResponse> update(Long id, TopicRequest req) {
         Topic topic = topicRepository.findById(id)
             .filter(t -> t.getDeletedAt() == null)
-            .orElseThrow(() -> new EntityNotFoundException("Topic not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
 
         if (req.getName() != null) topic.setName(req.getName());
         if (req.getDescription() != null) topic.setDescription(req.getDescription());
@@ -91,7 +91,7 @@ public class TopicService {
 
     public ApiResponse<Void> delete(Long id) {
         Topic topic = topicRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Topic not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         topic.setDeletedAt(Instant.now());
         topicRepository.save(topic);
         log.info("Topic soft-deleted: id={}", id);

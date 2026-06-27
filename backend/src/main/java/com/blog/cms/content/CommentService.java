@@ -47,7 +47,7 @@ public class CommentService {
         }
 
         Post post = postRepository.findById(req.getPostId())
-                .orElseThrow(() -> new EntityNotFoundException("post not found: " + req.getPostId()));
+                .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         if (!"published".equals(post.getStatus())) {
             throw new IllegalStateException("post is not published");
         }

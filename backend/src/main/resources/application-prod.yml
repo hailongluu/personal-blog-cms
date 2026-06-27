@@ -21,3 +21,7 @@ server:
   error:
     include-message: never
     include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+    whitelabel:
+      enabled: false  # Don't expose Spring's default whitelabel error page

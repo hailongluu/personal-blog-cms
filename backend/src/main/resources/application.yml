@@ -48,8 +48,14 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
   error:
-    include-message: always
-    include-binding-errors: always
+    # Production must NEVER expose internal exception messages, validation
+    # binding errors, or stack traces — they leak schema, table names, and
+    # library versions to attackers. application-prod.yml hardens this further.
+    # Dev profile (default) keeps them on for debugging.
+    include-message: ${SERVER_ERROR_INCLUDE_MESSAGE:always}
+    include-binding-errors: ${SERVER_ERROR_INCLUDE_BINDING_ERRORS:always}
+    include-stacktrace: ${SERVER_ERROR_INCLUDE_STACKTRACE:on_param}
+    include-exception: ${SERVER_ERROR_INCLUDE_EXCEPTION:false}
 
 blog:
   site:

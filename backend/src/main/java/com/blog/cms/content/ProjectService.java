@@ -34,7 +34,7 @@ public class ProjectService {
     public ApiResponse<ProjectResponse> findById(Long id) {
         Project project = projectRepository.findById(id)
             .filter(p -> p.getDeletedAt() == null)
-            .orElseThrow(() -> new EntityNotFoundException("Project not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         return ApiResponse.ok(ProjectResponse.from(project));
     }
 
@@ -73,7 +73,7 @@ public class ProjectService {
     public ApiResponse<ProjectResponse> update(Long id, ProjectRequest req) {
         Project project = projectRepository.findById(id)
             .filter(p -> p.getDeletedAt() == null)
-            .orElseThrow(() -> new EntityNotFoundException("Project not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
 
         if (req.getTitle() != null) project.setTitle(req.getTitle());
         if (req.getDescription() != null) project.setDescription(req.getDescription());
@@ -94,7 +94,7 @@ public class ProjectService {
 
     public ApiResponse<Void> delete(Long id) {
         Project project = projectRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Project not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
         project.setDeletedAt(Instant.now());
         projectRepository.save(project);
         log.info("Project soft-deleted: id={}", id);

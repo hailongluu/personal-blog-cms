@@ -63,16 +63,14 @@ public class PublicPostService {
     @Transactional(readOnly = true)
     public ApiResponse<PostResponse> getPublishedPostBySlug(String slug) {
         Post post = postRepository.findPublishedBySlug(slug)
-            .orElseThrow(() -> new EntityNotFoundException(
-                "Không tìm thấy bài viết: " + slug));
+            .orElseThrow(() -> new EntityNotFoundException("Post not found"));
         return ApiResponse.ok(PostResponse.from(post));
     }
 
     @Transactional(readOnly = true)
     public String getPublishedPostMarkdown(String slug) {
         Post post = postRepository.findPublishedBySlug(slug)
-            .orElseThrow(() -> new EntityNotFoundException(
-                "Không tìm thấy bài viết: " + slug));
+            .orElseThrow(() -> new EntityNotFoundException("Post not found"));
         return post.getContentMarkdown() != null ? post.getContentMarkdown() : "";
     }
 
