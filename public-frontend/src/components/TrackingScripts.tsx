@@ -11,7 +11,13 @@ function str(v: string | boolean | undefined): string {
   return typeof v === 'string' ? v : '';
 }
 
+/** consent_mode 'none' is a site-wide kill-switch — inject no tracking at all. */
+function trackingDisabled(s: Settings): boolean {
+  return str(s['tracking.consent_mode']).toLowerCase() === 'none';
+}
+
 export function TrackingScripts({ settings: s }: { settings: Settings }) {
+  if (trackingDisabled(s)) return null;
   const ga4 = str(s['tracking.ga4_measurement_id']);
   const gtm = str(s['tracking.gtm_container_id']);
   const fb = str(s['tracking.fb_pixel_id']);
@@ -54,6 +60,7 @@ export function TrackingScripts({ settings: s }: { settings: Settings }) {
 
 /** GTM + FB <noscript> fallbacks — placed at the top of <body>. */
 export function TrackingNoscript({ settings: s }: { settings: Settings }) {
+  if (trackingDisabled(s)) return null;
   const gtm = str(s['tracking.gtm_container_id']);
   const fb = str(s['tracking.fb_pixel_id']);
   const fbOn = s['tracking.fb_enabled'] !== false;

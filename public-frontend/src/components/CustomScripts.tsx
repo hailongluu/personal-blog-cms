@@ -1,6 +1,23 @@
 'use client';
 
 import { useEffect } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
+
+// Defense-in-depth: the backend (Jsoup) is the canonical sanitizer, but we run
+// admin-authored custom HTML through DOMPurify again before injecting. Scripts
+// are allowed back explicitly (tracking snippets need them) but event handlers,
+// iframes, and dangerous tags are stripped.
+const PURIFY_CONFIG = {
+  ADD_TAGS: ['script', 'style', 'meta', 'link', 'noscript'],
+  ADD_ATTR: ['src', 'async', 'defer', 'type', 'id', 'nonce', 'crossorigin', 'rel', 'href', 'as', 'name', 'content', 'property', 'charset', 'http-equiv', 'media'],
+  FORBID_TAGS: ['iframe', 'object', 'embed', 'form', 'input', 'button', 'frame', 'frameset'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onmouseout'],
+  ALLOW_DATA_ATTR: false,
+} as const;
+
+function sanitize(html: string): string {
+  return DOMPurify.sanitize(html, PURIFY_CONFIG as Record<string, unknown>);
+}
 
 // Injects admin-authored custom HTML/CSS from settings (custom.head_scripts,
 // custom.css, custom.body_start_scripts, custom.body_end_scripts).
@@ -46,9 +63,9 @@ export default function CustomScripts({ headHtml, css, bodyStart, bodyEnd }: Pro
       style.textContent = css.replace(/<\/style\s*>/gi, '');
       document.head.appendChild(style);
     }
-    if (headHtml) injectHtml(headHtml, 'head', 'end');
-    if (bodyStart) injectHtml(bodyStart, 'body', 'start');
-    if (bodyEnd) injectHtml(bodyEnd, 'body', 'end');
+    if (headHtml) injectHtml(sanitize(headHtml), 'head', 'end');
+    if (bodyStart) injectHtml(sanitize(bodyStart), 'body', 'start');
+    if (bodyEnd) injectHtml(sanitize(bodyEnd), 'body', 'end');
   }, [headHtml, css, bodyStart, bodyEnd]);
 
   return null;
