@@ -131,3 +131,13 @@ harness.db-journal
 harness.db-wal
 harness.db-shm
 .harness-cache/
+
+# Local agent + tooling config (not project code)
+.claude/
+.mcp.json
+
+# Separate sibling project that lives in this dir (has its own secrets)
+wordpress/
+
+# CodeGraph index (regenerable)
+.codegraph/
