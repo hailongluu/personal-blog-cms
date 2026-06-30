@@ -42,6 +42,21 @@ public class PublicController {
         return publicPostService.getPublishedPostBySlug(slug);
     }
 
+    @GetMapping("/posts/{slug}/related")
+    public ApiResponse<List<PostResponse>> getRelatedPosts(
+            @PathVariable String slug,
+            @RequestParam(defaultValue = "3") int limit) {
+        return publicPostService.getRelatedPosts(slug, limit);
+    }
+
+    @GetMapping("/search")
+    public ApiResponse<List<PostResponse>> search(
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return publicPostService.searchPublished(q, page, size);
+    }
+
     // ──────────────────────────────────────────────
     // Topics
     // ──────────────────────────────────────────────
@@ -54,6 +69,14 @@ public class PublicController {
     @GetMapping("/topics/{slug}")
     public ApiResponse<TopicResponse> getTopic(@PathVariable String slug) {
         return publicPostService.getTopicBySlug(slug);
+    }
+
+    @GetMapping("/tags/{slug}/posts")
+    public ApiResponse<List<PostResponse>> getTagPosts(
+            @PathVariable String slug,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return publicPostService.getPostsByTagSlug(slug, page, size);
     }
 
     @GetMapping("/topics/{slug}/posts")

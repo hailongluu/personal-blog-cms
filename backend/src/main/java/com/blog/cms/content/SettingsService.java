@@ -37,6 +37,8 @@ public class SettingsService {
         Map.entry("social.youtube", "string"),
         // ── Contact (existing) ─────────────────────────────────
         Map.entry("site.email", "string"),
+        // ── Posts ──────────────────────────────────────────────
+        Map.entry("posts.allow_comments", "boolean"),
         // ── Tracking scripts (new) ────────────────────────────
         Map.entry("tracking.ga4_measurement_id", "string"),
         Map.entry("tracking.gtm_container_id", "string"),

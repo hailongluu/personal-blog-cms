@@ -46,6 +46,9 @@ public class Comment {
     @Builder.Default
     private String status = "pending";
 
+    // Maps to the Postgres `inet` column. Without this, Hibernate binds a
+    // varchar and Postgres rejects it (42804: inet vs character varying).
+    @JdbcTypeCode(SqlTypes.INET)
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
 

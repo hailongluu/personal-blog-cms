@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -30,6 +31,7 @@ public class PublicPostService {
 
     private final PostRepository postRepository;
     private final TopicRepository topicRepository;
+    private final TagRepository tagRepository;
     private final ProjectRepository projectRepository;
     private final NewsletterSubscriberRepository newsletterSubscriberRepository;
 
@@ -56,6 +58,64 @@ public class PublicPostService {
     public ApiResponse<List<PostResponse>> listFeaturedPosts(int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Post> posts = postRepository.findFeaturedPosts(Instant.now(), pageable);
+        var data = posts.getContent().stream().map(PostResponse::from).toList();
+        return ApiResponse.paged(data, page, size, posts.getTotalElements());
+    }
+
+    /** Published posts carrying a given tag (by slug). */
+    @Transactional(readOnly = true)
+    public ApiResponse<List<PostResponse>> getPostsByTagSlug(String slug, int page, int size) {
+        Tag tag = tagRepository.findBySlug(slug)
+            .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy thẻ: " + slug));
+        Pageable pageable = PageRequest.of(page - 1, size,
+            Sort.by(Sort.Direction.DESC, "publishedAt"));
+        Page<Post> posts = postRepository.findPublishedPosts(
+            Instant.now(), null, tag.getId(), pageable);
+        var data = posts.getContent().stream().map(PostResponse::from).toList();
+        return ApiResponse.paged(data, page, size, posts.getTotalElements());
+    }
+
+    /** Related posts: same topic first (excluding self), then fill with recent. */
+    @Transactional(readOnly = true)
+    public ApiResponse<List<PostResponse>> getRelatedPosts(String slug, int limit) {
+        int n = Math.max(1, Math.min(limit, 12));
+        Post current = postRepository.findPublishedBySlug(slug).orElse(null);
+        if (current == null) return ApiResponse.ok(List.of());
+
+        LinkedHashMap<Long, Post> picked = new LinkedHashMap<>();
+
+        // 1. Same topic (most recent)
+        if (current.getTopic() != null && current.getTopic().getSlug() != null) {
+            Pageable p = PageRequest.of(0, n + 1, Sort.by(Sort.Direction.DESC, "publishedAt"));
+            for (Post post : postRepository.findPublishedByTopicSlug(
+                    current.getTopic().getSlug(), Instant.now(), p).getContent()) {
+                if (!post.getId().equals(current.getId())) picked.putIfAbsent(post.getId(), post);
+                if (picked.size() >= n) break;
+            }
+        }
+
+        // 2. Fallback — most recent published posts
+        if (picked.size() < n) {
+            Pageable p = PageRequest.of(0, n + picked.size() + 1, Sort.by(Sort.Direction.DESC, "publishedAt"));
+            for (Post post : postRepository.findPublishedPosts(Instant.now(), null, null, p).getContent()) {
+                if (post.getId().equals(current.getId())) continue;
+                picked.putIfAbsent(post.getId(), post);
+                if (picked.size() >= n) break;
+            }
+        }
+
+        var data = picked.values().stream().limit(n).map(PostResponse::from).toList();
+        return ApiResponse.ok(data);
+    }
+
+    /** Full-text search over published posts (tsvector/ts_rank). Empty query → empty page. */
+    @Transactional(readOnly = true)
+    public ApiResponse<List<PostResponse>> searchPublished(String query, int page, int size) {
+        if (query == null || query.isBlank()) {
+            return ApiResponse.paged(List.of(), page, size, 0);
+        }
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Post> posts = postRepository.searchFullText(query.trim(), "published", null, pageable);
         var data = posts.getContent().stream().map(PostResponse::from).toList();
         return ApiResponse.paged(data, page, size, posts.getTotalElements());
     }
