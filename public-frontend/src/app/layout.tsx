@@ -87,11 +87,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="vi">
       <body className="min-h-screen flex flex-col">
-        {/* Set theme class before paint to avoid flash. */}
+        {/* Default to light. Dark mode is opt-in only (user toggles it); we do
+            NOT auto-follow the OS prefers-color-scheme. */}
         <script
           dangerouslySetInnerHTML={{
-            __html:
-              "try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
+            __html: "try{if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}",
           }}
         />
         {/* JSON-LD + provider scripts. React 19 / next-script hoist these to <head>;
