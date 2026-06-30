@@ -6,6 +6,7 @@ import { getPostBySlug, getPublicSettings } from '@/lib/api';
 import PostContent from '@/components/PostContent';
 import PostToc from '@/components/PostToc';
 import ReadingProgress from '@/components/ReadingProgress';
+import ShareButtons from '@/components/ShareButtons';
 import Comments from '@/components/Comments';
 import RelatedPosts from '@/components/RelatedPosts';
 import { SITE_URL, SITE_NAME, AUTHOR_NAME, TWITTER_HANDLE, LOCALE, absUrl, ogImageUrl } from '@/lib/site';
@@ -174,6 +175,10 @@ export default async function BlogDetailPage({ params }: Params) {
           ))}
         </div>
       )}
+
+      <div className="mt-8 pt-6 border-t border-stone-200 dark:border-stone-800">
+        <ShareButtons url={url} title={post.title} />
+      </div>
     </article>
 
     <RelatedPosts slug={post.slug} />
