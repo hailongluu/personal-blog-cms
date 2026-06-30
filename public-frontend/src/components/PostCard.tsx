@@ -27,10 +27,10 @@ export default function PostCard({ post }: { post: Post }) {
             {post.topic.name}
           </span>
         )}
-        <h2 className="text-xl font-bold text-stone-900 leading-snug group-hover:text-stone-700 transition-colors">
+        <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 leading-snug group-hover:text-stone-700 dark:group-hover:text-white transition-colors">
           {post.title}
         </h2>
-        {post.excerpt && <p className="mt-2 text-stone-500 line-clamp-2">{post.excerpt}</p>}
+        {post.excerpt && <p className="mt-2 text-stone-500 dark:text-stone-400 line-clamp-2">{post.excerpt}</p>}
         <div className="mt-3 flex items-center gap-4 text-xs text-stone-400">
           {post.publishedAt && (
             <span className="flex items-center gap-1">

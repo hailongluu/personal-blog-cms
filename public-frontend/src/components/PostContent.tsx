@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 import { Lightbulb, AlertTriangle, BookOpen } from 'lucide-react';
 
 // Ported from frontend/src/components/CustomBlockRenderer.tsx so the Next public
@@ -88,10 +89,10 @@ export default function PostContent({ markdown }: { markdown: string }) {
   const blocks = parseCustomBlocks(cleaned);
   if (blocks.length === 0) return null;
   return (
-    <div className="prose prose-stone prose-lg max-w-none">
+    <div className="prose prose-stone dark:prose-invert prose-lg max-w-none">
       {blocks.map((block, idx) =>
         block.type === 'markdown' ? (
-          <ReactMarkdown key={idx} remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown key={idx} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
             {block.content}
           </ReactMarkdown>
         ) : (

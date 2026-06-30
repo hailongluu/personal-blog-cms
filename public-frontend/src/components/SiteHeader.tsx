@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import SearchBox from './SearchBox';
+import ThemeToggle from './ThemeToggle';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -23,9 +24,9 @@ export default function SiteHeader() {
   const pathname = usePathname() || '/';
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200">
+    <header className="sticky top-0 z-50 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border-b border-stone-200 dark:border-stone-800">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold tracking-tight text-stone-900 hover:text-stone-700 transition-colors">
+        <Link href="/" className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 hover:text-stone-700 dark:hover:text-white transition-colors">
           ✦ Personal Blog
         </Link>
 
@@ -47,6 +48,7 @@ export default function SiteHeader() {
             ))}
           </nav>
           <SearchBox />
+          <ThemeToggle />
         </div>
 
         <button

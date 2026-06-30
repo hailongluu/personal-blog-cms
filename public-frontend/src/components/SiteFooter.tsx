@@ -4,7 +4,7 @@ import { Rss, ExternalLink, GitFork } from 'lucide-react';
 export default function SiteFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer className="bg-white border-t border-stone-200 mt-auto">
+    <footer className="bg-white dark:bg-stone-900 border-t border-stone-200 dark:border-stone-800 mt-auto">
       <div className="max-w-5xl mx-auto px-4 py-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-stone-500">© {year} Personal Blog. All rights reserved.</p>

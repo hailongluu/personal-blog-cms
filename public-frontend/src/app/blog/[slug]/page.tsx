@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock, Eye, Calendar } from 'lucide-react';
 import { getPostBySlug, getPublicSettings } from '@/lib/api';
 import PostContent from '@/components/PostContent';
+import PostToc from '@/components/PostToc';
+import ReadingProgress from '@/components/ReadingProgress';
 import Comments from '@/components/Comments';
 import RelatedPosts from '@/components/RelatedPosts';
 import { SITE_URL, SITE_NAME, AUTHOR_NAME, TWITTER_HANDLE, LOCALE, absUrl, ogImageUrl } from '@/lib/site';
@@ -101,6 +103,7 @@ export default async function BlogDetailPage({ params }: Params) {
 
   return (
     <>
+    <ReadingProgress />
     <article className="max-w-3xl mx-auto px-4 py-12 md:py-16">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -150,6 +153,8 @@ export default async function BlogDetailPage({ params }: Params) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.coverImageUrl} alt={post.title} className="w-full rounded-xl mb-10 object-cover max-h-96" />
       )}
+
+      <PostToc markdown={post.contentMarkdown} />
 
       {/* Rendered from contentMarkdown with custom blocks (:::takeaways/callout/
           reference) — backend doesn't reliably populate contentHtml. SSR → full
