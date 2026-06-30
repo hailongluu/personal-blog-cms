@@ -124,6 +124,14 @@ export async function searchPosts(q: string, page = 1, pageSize = 10): Promise<P
   return res ?? { data: [], meta: { page, pageSize, totalItems: 0, totalPages: 0 } };
 }
 
+// ─── Newsletter (double opt-in) ───────────────────────────
+export async function confirmNewsletter(token: string): Promise<ApiResponse<null> | null> {
+  return apiGet<ApiResponse<null>>(`/newsletter/confirm?token=${encodeURIComponent(token)}`, 0);
+}
+export async function unsubscribeNewsletter(email: string): Promise<ApiResponse<null> | null> {
+  return apiGet<ApiResponse<null>>(`/newsletter/unsubscribe?email=${encodeURIComponent(email)}`, 0);
+}
+
 // ─── Comments ─────────────────────────────────────────────
 export async function getComments(postId: number): Promise<Comment[]> {
   const res = await apiGet<ApiResponse<Comment[]>>(`/comments/post/${postId}`, 30);

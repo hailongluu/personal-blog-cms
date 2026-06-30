@@ -11,6 +11,8 @@ public interface NewsletterSubscriberRepository extends JpaRepository<Newsletter
 
     Optional<NewsletterSubscriber> findByEmail(String email);
 
+    Optional<NewsletterSubscriber> findByConfirmToken(String confirmToken);
+
     boolean existsByEmail(String email);
 
     long countByStatus(String status);

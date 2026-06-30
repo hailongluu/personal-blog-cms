@@ -34,6 +34,8 @@ public class PublicPostService {
     private final TagRepository tagRepository;
     private final ProjectRepository projectRepository;
     private final NewsletterSubscriberRepository newsletterSubscriberRepository;
+    private final NewsletterEmailSender newsletterEmailSender;
+    private final com.blog.cms.config.BlogProperties blogProperties;
 
     // ──────────────────────────────────────────────
     // Posts
@@ -208,23 +210,78 @@ public class PublicPostService {
         if (newsletterSubscriberRepository.existsByEmail(email)) {
             NewsletterSubscriber existing = newsletterSubscriberRepository.findByEmail(email)
                 .orElseThrow();
-            if ("unsubscribed".equals(existing.getStatus())) {
-                existing.setStatus("pending");
-                existing.setUnsubscribedAt(null);
-                newsletterSubscriberRepository.save(existing);
-                log.info("Newsletter re-subscribe: {}", email);
+            if ("confirmed".equals(existing.getStatus())) {
+                // Already confirmed — silently OK
                 return ApiResponse.ok(null);
             }
-            // Already subscribed — silently OK
+            // pending / unsubscribed → (re)issue a confirm token (double opt-in)
+            String token = java.util.UUID.randomUUID().toString();
+            existing.setStatus("pending");
+            existing.setUnsubscribedAt(null);
+            existing.setConfirmToken(token);
+            newsletterSubscriberRepository.save(existing);
+            sendConfirmEmail(email, token);
+            log.info("Newsletter re-subscribe (pending confirm): {}", email);
             return ApiResponse.ok(null);
         }
 
+        String token = java.util.UUID.randomUUID().toString();
         NewsletterSubscriber sub = NewsletterSubscriber.builder()
             .email(email)
             .status("pending")
+            .confirmToken(token)
             .build();
         newsletterSubscriberRepository.save(sub);
-        log.info("Newsletter subscribe: {}", email);
+        sendConfirmEmail(email, token);
+        log.info("Newsletter subscribe (pending confirm): {}", email);
         return ApiResponse.ok(null);
+    }
+
+    /** Double opt-in: confirm a subscription via its token. */
+    public ApiResponse<Void> confirmNewsletter(String token) {
+        if (token == null || token.isBlank()) {
+            return ApiResponse.error("Thiếu token xác nhận");
+        }
+        NewsletterSubscriber sub = newsletterSubscriberRepository.findByConfirmToken(token.trim())
+            .orElse(null);
+        if (sub == null) {
+            return ApiResponse.error("Token không hợp lệ hoặc đã được sử dụng");
+        }
+        sub.setStatus("confirmed");
+        sub.setConfirmedAt(Instant.now());
+        sub.setConfirmToken(null);
+        newsletterSubscriberRepository.save(sub);
+        log.info("Newsletter confirmed: {}", sub.getEmail());
+        return ApiResponse.ok(null);
+    }
+
+    /** Unsubscribe by email (the link embedded in newsletter emails). */
+    public ApiResponse<Void> unsubscribeNewsletter(String email) {
+        if (email == null || email.isBlank()) {
+            return ApiResponse.error("Thiếu email");
+        }
+        NewsletterSubscriber sub = newsletterSubscriberRepository.findByEmail(email.trim().toLowerCase())
+            .orElse(null);
+        if (sub != null && !"unsubscribed".equals(sub.getStatus())) {
+            sub.setStatus("unsubscribed");
+            sub.setUnsubscribedAt(Instant.now());
+            newsletterSubscriberRepository.save(sub);
+            log.info("Newsletter unsubscribed: {}", sub.getEmail());
+        }
+        // Always OK (don't reveal whether the email existed)
+        return ApiResponse.ok(null);
+    }
+
+    private void sendConfirmEmail(String email, String token) {
+        try {
+            String base = blogProperties.getSite().getUrl().replaceAll("/$", "");
+            String link = base + "/newsletter/confirm?token=" + token;
+            String html = "<p>Cảm ơn bạn đã đăng ký nhận bản tin!</p>"
+                + "<p>Nhấn vào liên kết sau để xác nhận đăng ký:</p>"
+                + "<p><a href=\"" + link + "\">Xác nhận đăng ký</a></p>";
+            newsletterEmailSender.send(email, "Xác nhận đăng ký bản tin", html);
+        } catch (Exception ex) {
+            log.warn("Failed to send confirm email to {} — {}", email, ex.getMessage());
+        }
     }
 }

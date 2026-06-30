@@ -67,7 +67,7 @@ public class NewsletterService {
         if (sendEmails) {
             for (NewsletterSubscriber sub : recipients) {
                 String unsub = blogProperties.getSite().getUrl()
-                        + "/api/public/newsletter/unsubscribe?email="
+                        + "/newsletter/unsubscribe?email="
                         + urlEncode(sub.getEmail());
                 String html = renderHtml(req, unsub);
                 try {

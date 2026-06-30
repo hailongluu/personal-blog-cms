@@ -114,4 +114,14 @@ public class PublicController {
         String email = body.get("email");
         return publicPostService.subscribeNewsletter(email);
     }
+
+    @GetMapping("/newsletter/confirm")
+    public ApiResponse<Void> confirmNewsletter(@RequestParam(required = false) String token) {
+        return publicPostService.confirmNewsletter(token);
+    }
+
+    @GetMapping("/newsletter/unsubscribe")
+    public ApiResponse<Void> unsubscribeNewsletter(@RequestParam(required = false) String email) {
+        return publicPostService.unsubscribeNewsletter(email);
+    }
 }
