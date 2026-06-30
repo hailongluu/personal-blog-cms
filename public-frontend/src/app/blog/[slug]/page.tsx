@@ -12,7 +12,15 @@ export const revalidate = 60;
 
 type Params = { params: Promise<{ slug: string }> };
 
-function ogImageForPost(post: { title: string; coverImageUrl: string | null; topic: { name: string } | null; author: { displayName: string } }) {
+function ogImageForPost(post: {
+  title: string;
+  ogImageUrl: string | null;
+  coverImageUrl: string | null;
+  topic: { name: string } | null;
+  author: { displayName: string };
+}) {
+  // Admin-set OG image > cover image > dynamically generated /og PNG.
+  if (post.ogImageUrl?.trim()) return absUrl(post.ogImageUrl);
   if (post.coverImageUrl) return absUrl(post.coverImageUrl);
   return ogImageUrl({ title: post.title, subtitle: post.topic?.name, author: post.author?.displayName });
 }
@@ -22,17 +30,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const post = await getPostBySlug(slug);
   if (!post) return { title: 'Không tìm thấy bài viết', robots: { index: false, follow: false } };
 
-  const description = post.excerpt || `${post.title} — ${SITE_NAME}`;
+  // Prefer admin-set SEO fields, fall back to the post's own content.
+  const metaTitle = post.metaTitle?.trim() || post.title;
+  const description = post.metaDescription?.trim() || post.excerpt || `${post.title} — ${SITE_NAME}`;
+  const canonical = post.canonicalUrl?.trim() || `/blog/${post.slug}`;
   const url = `${SITE_URL}/blog/${post.slug}`;
   const image = ogImageForPost(post);
 
   return {
-    title: post.title,
+    title: metaTitle,
     description,
-    alternates: { canonical: `/blog/${post.slug}` },
+    alternates: { canonical },
     openGraph: {
       type: 'article',
-      title: post.title,
+      title: metaTitle,
       description,
       url,
       siteName: SITE_NAME,
@@ -45,7 +56,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.title,
+      title: metaTitle,
       description,
       site: TWITTER_HANDLE,
       creator: TWITTER_HANDLE,
@@ -67,12 +78,12 @@ export default async function BlogDetailPage({ params }: Params) {
   const settings = await getPublicSettings();
   const allowComments = settings['posts.allow_comments'] === true;
 
-  const url = `${SITE_URL}/blog/${post.slug}`;
+  const url = post.canonicalUrl?.trim() || `${SITE_URL}/blog/${post.slug}`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    headline: post.title.slice(0, 110),
-    description: post.excerpt || undefined,
+    headline: (post.metaTitle?.trim() || post.title).slice(0, 110),
+    description: post.metaDescription?.trim() || post.excerpt || undefined,
     image: [ogImageForPost(post)],
     author: {
       '@type': 'Person',

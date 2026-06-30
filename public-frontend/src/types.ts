@@ -10,6 +10,10 @@ export interface Post {
   contentMarkdown: string;
   contentHtml: string;
   coverImageUrl: string | null;
+  ogImageUrl: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  canonicalUrl: string | null;
   type: string;
   featured: boolean;
   author: { id: number; displayName: string; avatarUrl: string | null };
