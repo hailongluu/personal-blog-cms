@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
+  // Admin SPA is served under /admin by nginx (public site is Next.js at /).
+  base: '/admin/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

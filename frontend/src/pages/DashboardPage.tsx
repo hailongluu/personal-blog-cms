@@ -82,7 +82,7 @@ export default function DashboardPage() {
         <div className="bg-surface rounded-xl border border-border p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-text">Recent published</h2>
-            <Link to="/admin/posts" className="text-xs text-primary hover:underline">
+            <Link to="/posts" className="text-xs text-primary hover:underline">
               View all →
             </Link>
           </div>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
         <div className="bg-surface rounded-xl border border-border p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-text">Latest drafts</h2>
-            <Link to="/admin/posts?status=draft" className="text-xs text-primary hover:underline">
+            <Link to="/posts?status=draft" className="text-xs text-primary hover:underline">
               View all →
             </Link>
           </div>

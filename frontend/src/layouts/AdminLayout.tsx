@@ -6,15 +6,16 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
+// Paths are relative to the router basename '/admin' (see App.tsx).
 const navItems = [
-  { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/posts', icon: FileText, label: 'Posts' },
-  { to: '/admin/topics', icon: FolderTree, label: 'Topics' },
-  { to: '/admin/tags', icon: Tags, label: 'Tags' },
-  { to: '/admin/projects', icon: Briefcase, label: 'Projects' },
-  { to: '/admin/media', icon: Image, label: 'Media' },
-  { to: '/admin/scheduled-tasks', icon: Clock, label: 'Scheduled Tasks' },
-  { to: '/admin/settings', icon: Settings, label: 'Settings' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/posts', icon: FileText, label: 'Posts' },
+  { to: '/topics', icon: FolderTree, label: 'Topics' },
+  { to: '/tags', icon: Tags, label: 'Tags' },
+  { to: '/projects', icon: Briefcase, label: 'Projects' },
+  { to: '/media', icon: Image, label: 'Media' },
+  { to: '/scheduled-tasks', icon: Clock, label: 'Scheduled Tasks' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AdminLayout() {
@@ -41,7 +42,7 @@ export default function AdminLayout() {
             <NavLink
               key={to}
               to={to}
-              end={to === '/admin'}
+              end={to === '/'}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
@@ -69,7 +70,7 @@ export default function AdminLayout() {
           </button>
           <div className="flex items-center gap-3 ml-auto">
             <button
-              onClick={() => navigate('/admin/profile')}
+              onClick={() => navigate('/profile')}
               className="text-sm text-text-muted hover:text-text transition-colors"
               title="View profile / change password"
             >
