@@ -3,7 +3,7 @@ import { settingsApi } from '@/lib/data';
 import type { Settings } from '@/types';
 import {
   Save, RefreshCw, Globe, User, Link2, Mail,
-  BarChart3, Code2, ShieldCheck, ExternalLink, AlertCircle, CheckCircle2, Power
+  BarChart3, Code2, ShieldCheck, ExternalLink, AlertCircle, CheckCircle2
 } from 'lucide-react';
 
 // ── Client-side regex validators (mirror backend) ───────────────
@@ -228,24 +228,19 @@ function TrackingTab({ settings, updateField }: { settings: Settings; updateFiel
     helpUrl?: string;
     helpUrlLabel?: string;
   }> = [
-    { key: 'tracking.ga4_measurement_id', label: 'GA4 Measurement ID', placeholder: 'G-XXXXXXXXXX',
-      helpUrl: 'https://analytics.google.com', helpUrlLabel: 'Google Analytics' },
     { key: 'tracking.gtm_container_id', label: 'GTM Container ID', placeholder: 'GTM-XXXXXXX',
       helpUrl: 'https://tagmanager.google.com', helpUrlLabel: 'Tag Manager' },
-    { key: 'tracking.fb_pixel_id', label: 'Facebook Pixel ID', placeholder: '15-20 digits',
-      helpUrl: 'https://business.facebook.com/events-manager', helpUrlLabel: 'Events Manager' },
-    { key: 'tracking.tiktok_pixel_id', label: 'TikTok Pixel ID', placeholder: 'CXXXXXXXXXXXXXXX',
-      helpUrl: 'https://ads.tiktok.com/events-manager', helpUrlLabel: 'Events Manager' },
   ];
 
   return (
     <div className="space-y-6">
-      <Section title="Analytics & Marketing Tags" icon={<BarChart3 size={18} />}>
+      <Section title="Google Tag Manager" icon={<BarChart3 size={18} />}>
         <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-800 text-sm px-4 py-3 rounded-lg flex items-start gap-2">
           <ShieldCheck size={16} className="flex-shrink-0 mt-0.5" />
           <div>
-            <strong>Tracking IDs are validated server-side.</strong> Empty values disable the tag.
-            Leave blank if you don't use a service.
+            <strong>Chỉ cần GTM.</strong> Blog nhúng một container Google Tag Manager. Hãy quản lý
+            GA4, Microsoft Clarity, Facebook Pixel… như các tag <em>bên trong</em> GTM — không cần
+            khai báo riêng ở đây. ID được validate phía server; để trống = tắt.
           </div>
         </div>
 
@@ -285,30 +280,6 @@ function TrackingTab({ settings, updateField }: { settings: Settings; updateFiel
               </div>
             );
           })}
-        </div>
-      </Section>
-
-      <Section title="Tag Toggles (admin only)" icon={<Power size={18} />}>
-        <p className="text-xs text-text-muted mb-4">
-          These flags override the presence of tracking IDs. Disable to temporarily turn off
-          a service without removing the ID.
-        </p>
-        <div className="space-y-3">
-          <Toggle
-            label="GA4 enabled"
-            checked={!!settings['tracking.gtag_enabled']}
-            onChange={v => updateField('tracking.gtag_enabled', v)}
-          />
-          <Toggle
-            label="Facebook Pixel enabled"
-            checked={!!settings['tracking.fb_enabled']}
-            onChange={v => updateField('tracking.fb_enabled', v)}
-          />
-          <Toggle
-            label="TikTok Pixel enabled"
-            checked={!!settings['tracking.tiktok_enabled']}
-            onChange={v => updateField('tracking.tiktok_enabled', v)}
-          />
         </div>
       </Section>
 
@@ -479,25 +450,3 @@ function CodeArea({ rows, value, onChange, placeholder }: {
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <label className="flex items-center justify-between p-3 bg-bg rounded-lg border border-border cursor-pointer hover:bg-gray-100">
-      <span className="text-sm font-medium text-text">{label}</span>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors ${
-          checked ? 'bg-primary' : 'bg-gray-300'
-        }`}
-        role="switch"
-        aria-checked={checked}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow ${
-            checked ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
-      </button>
-    </label>
-  );
-}
